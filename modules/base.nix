@@ -64,6 +64,8 @@ in
 
   # Disable screen blanking, screensaver lock, and idle power actions.
   # Locked so users cannot override them via GNOME Settings.
+  # Also suppress the Activities Overview that GNOME 40+ shows on startup
+  # when no windows are open (before Chrome launches).
   programs.dconf.profiles.user.databases = [{
     settings = {
       "org/gnome/desktop/session".idle-delay             = lib.gvariant.mkUint32 0;
@@ -73,6 +75,7 @@ in
         sleep-inactive-battery-type = "nothing";
         power-button-action         = "nothing";
       };
+      "org/gnome/shell".enabled-extensions = [ "no-overview@fthx" ];
     };
     locks = [
       "/org/gnome/desktop/session/idle-delay"
@@ -98,6 +101,7 @@ in
     google-chrome
     vlc
     vscode
+    gnomeExtensions.no-overview
 
     # ── Dev tools ─────────────────────────────────────────────────
     git
@@ -164,6 +168,7 @@ in
     description = "Nginx Docker Compose (port 8885)";
     after    = [ "docker.service" "network-online.target" ];
     requires = [ "docker.service" ];
+    wants    = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type            = "oneshot";
@@ -212,6 +217,7 @@ in
       ExecStart = ''
         ${pkgs.google-chrome}/bin/google-chrome-stable \
           --no-sandbox \
+          --test-type \
           --disable-dev-shm-usage \
           --start-fullscreen \
           http://localhost:8885
