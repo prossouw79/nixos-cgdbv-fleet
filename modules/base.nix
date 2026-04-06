@@ -20,6 +20,12 @@
   boot.loader.systemd-boot.configurationLimit = 5;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  # Reboot automatically after a kernel panic instead of hanging
+  boot.kernel.sysctl = {
+    "kernel.panic"        = 10; # reboot 10 s after panic
+    "kernel.panic_on_oops" = 1;
+  };
+
   # Placeholder root filesystem — overridden by hardware-configuration.nix
   # generated during nixos-install on each device.
   fileSystems."/" = lib.mkDefault {
@@ -32,11 +38,19 @@
 
   # ── Networking ────────────────────────────────────────────────
   networking.networkmanager.enable = true;
+  networking.networkmanager.wifi.powersave = false; # prevent WiFi disconnects on idle
   networking.firewall.enable = true;
+
+  # Wake-on-LAN for all ethernet interfaces (also requires BIOS setting)
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|en*", \
+      RUN+="${pkgs.ethtool}/sbin/ethtool -s $name wol g"
+  '';
 
   # ── Desktop (GNOME) ───────────────────────────────────────────
   services.xserver.enable = true;
   services.xserver.displayManager.gdm.enable = true;
+  services.xserver.displayManager.gdm.autoSuspend = false;
   services.xserver.desktopManager.gnome.enable = true;
 
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
@@ -44,6 +58,21 @@
     gnome-maps gnome-music gnome-weather gnome-contacts
     gnome-calendar totem cheese epiphany
   ];
+
+  # Disable screen blanking, screensaver, and idle actions via dconf
+  programs.dconf.settings = {
+    "org/gnome/desktop/session" = {
+      idle-delay = lib.gvariant.mkUint32 0;   # never blank
+    };
+    "org/gnome/desktop/screensaver" = {
+      lock-enabled = false;
+    };
+    "org/gnome/settings-daemon/plugins/power" = {
+      sleep-inactive-ac-type      = "nothing";
+      sleep-inactive-battery-type = "nothing";
+      power-button-action         = "nothing";
+    };
+  };
 
   # ── Audio ─────────────────────────────────────────────────────
   hardware.pulseaudio.enable = false;
@@ -81,66 +110,107 @@
     tmux
     vim
     nano
+    ethtool   # used by WoL udev rule
 
     # ── Process / resource monitoring ─────────────────────────────
     htop
-    btop      # richer resource monitor
-    iotop     # disk I/O per process
+    btop
+    iotop
     lsof
 
     # ── Network tools ─────────────────────────────────────────────
-    inetutils   # hostname, ping, ifconfig, traceroute, telnet
-    nettools    # netstat, route, arp
+    inetutils     # hostname, ping, ifconfig, traceroute
+    nettools      # netstat, route, arp
     nmap
-    bmon        # bandwidth monitor
-    nethogs     # network usage per process
-    dig         # DNS lookups
+    bmon
+    nethogs
+    dig
 
     # ── Hardware inspection ───────────────────────────────────────
-    pciutils    # lspci
-    usbutils    # lsusb
-    smartmontools  # disk health (smartctl)
+    pciutils      # lspci
+    usbutils      # lsusb
+    smartmontools # smartctl
 
     # ── Secrets management ────────────────────────────────────────
     inputs.agenix.packages.${pkgs.system}.default
   ];
 
-  # ── nix-ld (run unpatched binaries — needed for VSCode extensions and pip native deps)
+  # ── nix-ld (run unpatched binaries — VSCode extensions, pip native deps)
   programs.nix-ld.enable = true;
 
-  # ── Docker + Compose ──────────────────────────────────────────
+  # ── Docker ────────────────────────────────────────────────────
   virtualisation.docker = {
     enable = true;
     enableOnBoot = true;
   };
 
-  # ── Power management ─────────────────────────────────────────
-  # Kiosk devices must never sleep or suspend
-  systemd.targets.sleep.enable = false;
-  systemd.targets.suspend.enable = false;
-  systemd.targets.hibernate.enable = false;
+  # ── Power management ──────────────────────────────────────────
+  # Kiosk devices must never sleep, suspend, or hibernate
+  systemd.targets.sleep.enable        = false;
+  systemd.targets.suspend.enable      = false;
+  systemd.targets.hibernate.enable    = false;
   systemd.targets.hybrid-sleep.enable = false;
 
-  # Prevent GNOME from blanking/dimming the screen
-  services.xserver.displayManager.gdm.autoSuspend = false;
+  # Systemd hardware watchdog — reboots the machine if the kernel hangs
+  systemd.watchdog.runtimeTime = "30s";
+
+  # Ignore lid close and define power button behaviour
+  services.logind.extraConfig = ''
+    HandlePowerKey=poweroff
+    HandleLidSwitch=ignore
+    HandleLidSwitchExternalPower=ignore
+    HandleLidSwitchDocked=ignore
+  '';
+
+  # ── Kiosk browser ─────────────────────────────────────────────
+  # Chrome runs as a systemd user service so it restarts automatically on crash.
+  # After 3 failures within 60 s the system reboots.
+  # Override the URL per-device in hosts/<name>/configuration.nix.
+  systemd.user.services.chrome-kiosk = {
+    description = "Chrome Kiosk Browser";
+    wantedBy = [ "graphical-session.target" ];
+    after    = [ "graphical-session.target" ];
+    unitConfig = {
+      StartLimitBurst       = 3;
+      StartLimitIntervalSec = 60;
+    };
+    serviceConfig = {
+      ExecStart = "${pkgs.google-chrome}/bin/google-chrome-stable --start-fullscreen https://www.google.com";
+      Restart    = "on-failure";
+      RestartSec = "5s";
+    };
+  };
+
+  # Reboot the system if Chrome exhausts its restart attempts
+  systemd.user.services.chrome-kiosk-reboot = {
+    description = "Reboot after Chrome kiosk failure";
+    unitConfig.DefaultDependencies = false;
+    serviceConfig = {
+      Type      = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/systemctl reboot";
+    };
+  };
+
+  # Wire OnFailure on the system slice (user services can't reboot directly)
+  systemd.services.chrome-kiosk-reboot = {
+    description = "Reboot triggered by Chrome kiosk failure";
+    serviceConfig = {
+      Type      = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/systemctl reboot";
+    };
+  };
 
   # ── Auto-update service ───────────────────────────────────────
-  # Every device polls GitHub and applies the matching config automatically.
   systemd.services.nixos-auto-update = {
     description = "Pull and apply NixOS configuration from GitHub";
     wants = [ "network-online.target" ];
-    after  = [ "network-online.target" ];
-
+    after = [ "network-online.target" ];
     serviceConfig = {
       Type = "oneshot";
       User = "root";
-      # View logs with: journalctl -u nixos-auto-update
     };
-
     script = ''
       set -euo pipefail
-
-      # TODO: replace with your actual GitHub org/username and repo name
       REPO="github:prossouw79/nixos-cgdbv-fleet"
       HOSTNAME=$(${pkgs.inetutils}/bin/hostname)
 
@@ -148,6 +218,15 @@
       /run/current-system/sw/bin/nixos-rebuild switch \
         --flake "$REPO#$HOSTNAME" \
         2>&1
+
+      # Reboot if the running system differs from the newly built one
+      # (e.g. a new kernel was installed)
+      booted=$(readlink /run/booted-system)
+      current=$(readlink /run/current-system)
+      if [ "$booted" != "$current" ]; then
+        echo "[auto-update] New generation requires reboot — rebooting now"
+        /run/current-system/sw/bin/systemctl reboot
+      fi
     '';
   };
 
@@ -156,16 +235,15 @@
     description = "Periodic NixOS auto-update timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec       = "1min";
-      OnUnitActiveSec = "5min";
+      OnBootSec          = "1min";
+      OnUnitActiveSec    = "5min";
       RandomizedDelaySec = "30sec";
     };
   };
 
-  # Also trigger an update whenever a network interface comes online
+  # Trigger an update whenever a network interface comes online
   networking.networkmanager.dispatcherScripts = [{
     source = pkgs.writeShellScript "nixos-auto-update-on-connect" ''
-      INTERFACE="$1"
       EVENT="$2"
       if [ "$EVENT" = "up" ] || [ "$EVENT" = "connectivity-change" ]; then
         systemctl start nixos-auto-update.service
@@ -177,59 +255,40 @@
   # ── Auto-login ────────────────────────────────────────────────
   services.displayManager.autoLogin = {
     enable = true;
-    user = "admin";
+    user   = "admin";
   };
-  # Required to avoid a GNOME autologin race condition
-  systemd.services."getty@tty1".enable = false;
+  systemd.services."getty@tty1".enable  = false;
   systemd.services."autovt@tty1".enable = false;
 
-  # ── Kiosk startup ─────────────────────────────────────────────
-  # Opens Chrome in fullscreen on login. Change the URL per-device by
-  # overriding this entry in the host's configuration.nix.
-  environment.etc."xdg/autostart/chrome-kiosk.desktop" = {
-    text = ''
-      [Desktop Entry]
-      Type=Application
-      Name=Chrome Kiosk
-      Exec=${pkgs.google-chrome}/bin/google-chrome-stable --start-fullscreen https://www.google.com
-      X-GNOME-Autostart-enabled=true
-    '';
-  };
-
   # ── Locale / time ─────────────────────────────────────────────
-  time.timeZone = "Africa/Johannesburg";
+  time.timeZone      = "Africa/Johannesburg";
   i18n.defaultLocale = "en_ZA.UTF-8";
 
   # ── Sudo ──────────────────────────────────────────────────────
-  # Passwordless sudo for wheel — SSH key auth is the security boundary.
   security.sudo.wheelNeedsPassword = false;
 
   # ── SSH ───────────────────────────────────────────────────────
-  # Open on LAN and Tailscale. Key-only — safe to leave open for remote management.
   services.openssh = {
     enable = true;
     settings.PasswordAuthentication = false;
-    settings.PermitRootLogin = "no";
+    settings.PermitRootLogin        = "no";
   };
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   # ── Tailscale ─────────────────────────────────────────────────
   services.tailscale.enable = true;
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
-  networking.firewall.allowedUDPPorts = [ config.services.tailscale.port ];
-  # After first boot, run: sudo tailscale up --authkey=<your-key>
-  # Generate a reusable auth key at https://login.tailscale.com/admin/settings/keys
+  networking.firewall.trustedInterfaces  = [ "tailscale0" ];
+  networking.firewall.allowedUDPPorts    = [ config.services.tailscale.port ];
+  # After first boot: sudo tailscale up --authkey=<your-key>
 
   # ── Users ─────────────────────────────────────────────────────
-  users.groups.admin = {
-    gid = 1000;
-  };
+  users.groups.admin.gid = 1000;
 
   users.users.admin = {
-    isNormalUser = true;
-    uid = 1000;
-    group = "admin";
-    extraGroups = [ "wheel" "docker" "networkmanager" "video" "audio" ];
+    isNormalUser  = true;
+    uid           = 1000;
+    group         = "admin";
+    extraGroups   = [ "wheel" "docker" "networkmanager" "video" "audio" ];
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBMYHX4vj6LafDI0GkMMhs+lzLEWI+wF56gVXBd0tOw cgdbv-fleet-admin"
     ];
