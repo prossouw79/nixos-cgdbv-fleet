@@ -56,16 +56,53 @@
 
   # ── System packages ───────────────────────────────────────────
   environment.systemPackages = with pkgs; [
+    # ── Desktop / user apps ───────────────────────────────────────
     google-chrome
     vlc
+    vscode
+
+    # ── Dev tools ─────────────────────────────────────────────────
     git
-    curl
-    htop
+    (python3.withPackages (ps: [ ps.pip ]))  # venv is included in stdlib
+
+    # ── Container tools ───────────────────────────────────────────
     docker
     docker-compose
-    (python3.withPackages (ps: [ ps.pip ]))  # venv is included in stdlib
-    vscode
-    inputs.agenix.packages.${pkgs.system}.default  # agenix CLI for encrypting secrets
+
+    # ── System utilities ──────────────────────────────────────────
+    curl
+    wget
+    rsync
+    file
+    tree
+    unzip
+    zip
+    jq
+    tmux
+    vim
+    nano
+
+    # ── Process / resource monitoring ─────────────────────────────
+    htop
+    btop      # richer resource monitor
+    iotop     # disk I/O per process
+    lsof
+
+    # ── Network tools ─────────────────────────────────────────────
+    inetutils   # hostname, ping, ifconfig, traceroute, telnet
+    nettools    # netstat, route, arp
+    nmap
+    bmon        # bandwidth monitor
+    nethogs     # network usage per process
+    dig         # DNS lookups
+
+    # ── Hardware inspection ───────────────────────────────────────
+    pciutils    # lspci
+    usbutils    # lsusb
+    smartmontools  # disk health (smartctl)
+
+    # ── Secrets management ────────────────────────────────────────
+    inputs.agenix.packages.${pkgs.system}.default
   ];
 
   # ── nix-ld (run unpatched binaries — needed for VSCode extensions and pip native deps)
@@ -95,7 +132,7 @@
 
       # TODO: replace with your actual GitHub org/username and repo name
       REPO="github:prossouw79/nixos-cgdbv-fleet"
-      HOSTNAME=$(hostname)
+      HOSTNAME=$(< /proc/sys/kernel/hostname)
 
       echo "[auto-update] Applying config for host: $HOSTNAME"
       /run/current-system/sw/bin/nixos-rebuild switch \
