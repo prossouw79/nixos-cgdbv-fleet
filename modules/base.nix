@@ -227,6 +227,13 @@
     };
     script = ''
       set -euo pipefail
+
+      # Skip if a nixos-rebuild is already running (e.g. a manual update via SSH)
+      if systemctl is-active --quiet nixos-rebuild-switch-to-configuration.service 2>/dev/null; then
+        echo "[auto-update] nixos-rebuild already running — skipping"
+        exit 0
+      fi
+
       REPO="github:prossouw79/nixos-cgdbv-fleet"
       HOSTNAME=$(${pkgs.inetutils}/bin/hostname)
 
