@@ -219,6 +219,8 @@ in
           --no-sandbox \
           --test-type \
           --disable-dev-shm-usage \
+          --hide-crash-restore-bubble \
+          --noerrdialogs \
           --start-fullscreen \
           http://localhost:8885
       '';
