@@ -1,5 +1,8 @@
 { config, pkgs, lib, inputs, ... }:
 
+let
+  nginxComposeFile = ../opt/docker-compose/nginx/docker-compose.yml;
+in
 {
   # ── Nix settings ──────────────────────────────────────────────
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -150,6 +153,27 @@
     enableOnBoot = true;
   };
 
+  # Place the nginx compose file at /opt/docker-compose/nginx/docker-compose.yml
+  systemd.tmpfiles.rules = [
+    "d /opt/docker-compose/nginx 0755 root root -"
+    "L+ /opt/docker-compose/nginx/docker-compose.yml - - - - ${nginxComposeFile}"
+  ];
+
+  # Start nginx via docker-compose on boot (after Docker is ready)
+  systemd.services.nginx-docker = {
+    description = "Nginx Docker Compose (port 8885)";
+    after    = [ "docker.service" "network-online.target" ];
+    requires = [ "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type            = "oneshot";
+      RemainAfterExit = true;
+      WorkingDirectory = "/opt/docker-compose/nginx";
+      ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d --pull always";
+      ExecStop  = "${pkgs.docker-compose}/bin/docker-compose down";
+    };
+  };
+
   # ── Power management ──────────────────────────────────────────
   # Kiosk devices must never sleep, suspend, or hibernate
   systemd.targets.sleep.enable        = false;
@@ -190,7 +214,7 @@
           --no-sandbox \
           --disable-dev-shm-usage \
           --start-fullscreen \
-          https://www.google.com
+          http://localhost:8885
       '';
       Restart    = "on-failure";
       RestartSec = "5s";
