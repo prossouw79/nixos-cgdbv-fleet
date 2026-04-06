@@ -283,7 +283,7 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec          = "1min";
-      OnUnitActiveSec    = "1min";
+      OnUnitActiveSec    = "15min";
       RandomizedDelaySec = "10sec";
     };
   };
