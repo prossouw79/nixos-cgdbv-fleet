@@ -1,0 +1,15 @@
+services:
+  nix:
+    image: nixpkgs/nix:latest
+    working_dir: /repo
+    volumes:
+      - .:/repo
+      # Persist the nix store between runs for faster subsequent checks
+      - nix-store:/nix
+    environment:
+      NIX_CONFIG: "experimental-features = nix-command flakes"
+    # Default command — overridden by make targets
+    command: nix flake check --no-build
+
+volumes:
+  nix-store:

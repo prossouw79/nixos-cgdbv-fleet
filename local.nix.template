@@ -1,0 +1,32 @@
+# Copy this file to /etc/nixos/local.nix on each device.
+# Fill in the WiFi PSK. This file must NEVER be committed to git.
+{ ... }:
+
+{
+  # Drops a NetworkManager connection keyfile for the fleet WiFi network.
+  environment.etc."NetworkManager/system-connections/CGROUNDWIFI.nmconnection" = {
+    mode = "0600";
+    text = ''
+      [connection]
+      id=CGROUNDWIFI
+      type=wifi
+
+      [wifi]
+      ssid=CGROUNDWIFI
+      mode=infrastructure
+
+      [wifi-security]
+      key-mgmt=wpa-psk
+      psk=REPLACE_WITH_ACTUAL_PASSWORD
+
+      [ipv4]
+      method=auto
+
+      [ipv6]
+      method=auto
+    '';
+  };
+
+  # Admin user password hash — generate with: mkpasswd -m sha-512
+  # users.users.admin.initialHashedPassword = "$6$...";
+}
