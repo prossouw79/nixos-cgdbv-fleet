@@ -59,20 +59,33 @@
     gnome-calendar totem cheese epiphany
   ];
 
-  # Disable screen blanking, screensaver, and idle actions via dconf
-  programs.dconf.settings = {
-    "org/gnome/desktop/session" = {
-      idle-delay = lib.gvariant.mkUint32 0;   # never blank
-    };
-    "org/gnome/desktop/screensaver" = {
-      lock-enabled = false;
-    };
-    "org/gnome/settings-daemon/plugins/power" = {
-      sleep-inactive-ac-type      = "nothing";
-      sleep-inactive-battery-type = "nothing";
-      power-button-action         = "nothing";
-    };
-  };
+  # Disable screen blanking, screensaver lock, and idle power actions.
+  # Written as dconf keyfiles — applied system-wide for all users.
+  environment.etc."dconf/db/local.d/00-kiosk".text = ''
+    [org/gnome/desktop/session]
+    idle-delay=uint32 0
+
+    [org/gnome/desktop/screensaver]
+    lock-enabled=false
+
+    [org/gnome/settings-daemon/plugins/power]
+    sleep-inactive-ac-type='nothing'
+    sleep-inactive-battery-type='nothing'
+    power-button-action='nothing'
+  '';
+  # Lock these keys so the user cannot override them via GNOME Settings
+  environment.etc."dconf/db/local.d/locks/00-kiosk".text = ''
+    /org/gnome/desktop/session/idle-delay
+    /org/gnome/desktop/screensaver/lock-enabled
+    /org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type
+    /org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type
+    /org/gnome/settings-daemon/plugins/power/power-button-action
+  '';
+  # Tell dconf to use the local keyfile database
+  environment.etc."dconf/profile/user".text = ''
+    user-db:user
+    system-db:local
+  '';
 
   # ── Audio ─────────────────────────────────────────────────────
   hardware.pulseaudio.enable = false;
