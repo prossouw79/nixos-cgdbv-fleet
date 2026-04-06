@@ -291,13 +291,10 @@
   };
   networking.firewall.allowedTCPPorts = [
     22     # SSH
-    19999  # Netdata
     61208  # Glances
   ];
 
   # ── Monitoring ────────────────────────────────────────────────
-  services.netdata.enable = true;
-
   services.glances.enable = true;
 
   # ── Tailscale ─────────────────────────────────────────────────
