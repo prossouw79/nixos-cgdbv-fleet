@@ -132,7 +132,7 @@
 
       # TODO: replace with your actual GitHub org/username and repo name
       REPO="github:prossouw79/nixos-cgdbv-fleet"
-      HOSTNAME=$(< /proc/sys/kernel/hostname)
+      HOSTNAME=$(${pkgs.inetutils}/bin/hostname)
 
       echo "[auto-update] Applying config for host: $HOSTNAME"
       /run/current-system/sw/bin/nixos-rebuild switch \
