@@ -153,6 +153,10 @@
   time.timeZone = "Africa/Johannesburg";
   i18n.defaultLocale = "en_ZA.UTF-8";
 
+  # ── Sudo ──────────────────────────────────────────────────────
+  # Passwordless sudo for wheel — SSH key auth is the security boundary.
+  security.sudo.wheelNeedsPassword = false;
+
   # ── SSH ───────────────────────────────────────────────────────
   # Open on LAN and Tailscale. Key-only — safe to leave open for remote management.
   services.openssh = {
