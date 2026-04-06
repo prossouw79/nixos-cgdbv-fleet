@@ -1,8 +1,8 @@
 { config, pkgs, lib, inputs, ... }:
 
 let
-  transcribeComposeFile = ../opt/docker-compose/transcribe/docker-compose.yml;
-  transcribeConfigFile = ../opt/docker-compose/transcribe/config.yaml;
+  transcribeComposeFile = ../opt/docker-compose/live-transcribe/docker-compose.yml;
+  transcribeConfigFile = ../opt/docker-compose/live-transcribe/config.yaml;
 in
 {
   # ── Nix settings ──────────────────────────────────────────────
