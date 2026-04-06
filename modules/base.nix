@@ -171,8 +171,7 @@
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBMYHX4vj6LafDI0GkMMhs+lzLEWI+wF56gVXBd0tOw cgdbv-fleet-admin"
     ];
-    # Set password with: passwd admin
-    # Or define initialHashedPassword in /etc/nixos/local.nix (mkpasswd -m sha-512)
+    initialHashedPassword = "$6$2AhsfG2/VfnkE2uo$aoaXVpfCaOsI2tQU9aZJUHr.XvzEYOdS4SgVOjbkNgMVUH3L5GYHwqRU1DCyUvdKJ6OR0I.PStamNPc0UMse8.";
   };
 
   system.stateVersion = "24.11";
