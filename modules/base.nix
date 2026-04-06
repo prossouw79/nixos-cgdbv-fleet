@@ -114,6 +114,16 @@
     enableOnBoot = true;
   };
 
+  # ── Power management ─────────────────────────────────────────
+  # Kiosk devices must never sleep or suspend
+  systemd.targets.sleep.enable = false;
+  systemd.targets.suspend.enable = false;
+  systemd.targets.hibernate.enable = false;
+  systemd.targets.hybrid-sleep.enable = false;
+
+  # Prevent GNOME from blanking/dimming the screen
+  services.xserver.displayManager.gdm.autoSuspend = false;
+
   # ── Auto-update service ───────────────────────────────────────
   # Every device polls GitHub and applies the matching config automatically.
   systemd.services.nixos-auto-update = {
