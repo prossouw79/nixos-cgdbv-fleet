@@ -1,7 +1,8 @@
 { config, pkgs, lib, inputs, ... }:
 
 let
-  nginxComposeFile = ../opt/docker-compose/nginx/docker-compose.yml;
+  transcribeComposeFile = ../opt/docker-compose/transcribe/docker-compose.yml;
+  transcribeConfigFile = ../opt/docker-compose/transcribe/config.yaml;
 in
 {
   # ── Nix settings ──────────────────────────────────────────────
@@ -157,14 +158,15 @@ in
     enableOnBoot = true;
   };
 
-  # Place the nginx compose file at /opt/docker-compose/nginx/docker-compose.yml
+  # Place the transcribe compose file at /opt/docker-compose/transcribe/docker-compose.yml
   systemd.tmpfiles.rules = [
-    "d /opt/docker-compose/nginx 0755 root root -"
-    "L+ /opt/docker-compose/nginx/docker-compose.yml - - - - ${nginxComposeFile}"
+    "d /opt/docker-compose/transcribe 0755 root root -"
+    "L+ /opt/docker-compose/transcribe/docker-compose.yml - - - - ${transcribeComposeFile}"
+    "L+ /opt/docker-compose/transcribe/config.yaml - - - - ${transcribeConfigFile}"
   ];
 
-  # Start nginx via docker-compose on boot (after Docker is ready)
-  systemd.services.nginx-docker = {
+  # Start transcribe via docker-compose on boot (after Docker is ready)
+  systemd.services.transcribe-docker = {
     description = "Nginx Docker Compose (port 8885)";
     after    = [ "docker.service" "network-online.target" ];
     requires = [ "docker.service" ];
@@ -173,7 +175,7 @@ in
     serviceConfig = {
       Type            = "oneshot";
       RemainAfterExit = true;
-      WorkingDirectory = "/opt/docker-compose/nginx";
+      WorkingDirectory = "/opt/docker-compose/transcribe";
       ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d --pull always";
       ExecStop  = "${pkgs.docker-compose}/bin/docker-compose down";
     };
