@@ -177,11 +177,21 @@
     wantedBy = [ "graphical-session.target" ];
     after    = [ "graphical-session.target" ];
     unitConfig = {
-      StartLimitBurst       = 3;
-      StartLimitIntervalSec = 60;
+      StartLimitBurst       = 5;
+      StartLimitIntervalSec = 120;
     };
     serviceConfig = {
-      ExecStart = "${pkgs.google-chrome}/bin/google-chrome-stable --start-fullscreen https://www.google.com";
+      # --no-sandbox: required when running under a systemd user service where
+      # Chrome's namespace sandbox cannot initialise (causes SIGTRAP otherwise).
+      # --disable-dev-shm-usage: avoids /dev/shm exhaustion on low-memory machines.
+      ExecStartPre = "${pkgs.coreutils}/bin/sleep 5"; # let GNOME settle first
+      ExecStart = ''
+        ${pkgs.google-chrome}/bin/google-chrome-stable \
+          --no-sandbox \
+          --disable-dev-shm-usage \
+          --start-fullscreen \
+          https://www.google.com
+      '';
       Restart    = "on-failure";
       RestartSec = "5s";
     };
