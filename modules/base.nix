@@ -98,9 +98,8 @@
       HOSTNAME=$(hostname)
 
       echo "[auto-update] Applying config for host: $HOSTNAME"
-      ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch \
+      /run/current-system/sw/bin/nixos-rebuild switch \
         --flake "$REPO#$HOSTNAME" \
-        --no-build-nix \
         2>&1
     '';
   };
