@@ -105,16 +105,28 @@
     '';
   };
 
-  # Run the update every 30 minutes
+  # Run the update every 5 minutes (increase OnUnitActiveSec to "30min" once stable)
   systemd.timers.nixos-auto-update = {
     description = "Periodic NixOS auto-update timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec  = "5min";
-      OnUnitActiveSec = "30min";
-      RandomizedDelaySec = "5min"; # stagger devices so GitHub isn't hammered
+      OnBootSec       = "1min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30sec";
     };
   };
+
+  # Also trigger an update whenever a network interface comes online
+  networking.networkmanager.dispatcherScripts = [{
+    source = pkgs.writeShellScript "nixos-auto-update-on-connect" ''
+      INTERFACE="$1"
+      EVENT="$2"
+      if [ "$EVENT" = "up" ] || [ "$EVENT" = "connectivity-change" ]; then
+        systemctl start nixos-auto-update.service
+      fi
+    '';
+    type = "basic";
+  }];
 
   # ── Auto-login ────────────────────────────────────────────────
   services.displayManager.autoLogin = {
