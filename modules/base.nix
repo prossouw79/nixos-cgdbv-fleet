@@ -326,14 +326,17 @@ in
         --flake "$REPO#$HOSTNAME" \
         2>&1
 
-      # Record the applied commit to /persist so it survives reboots
+      echo "[auto-update] Switch succeeded"
+
+      # Record the applied commit to /persist so it survives reboots.
+      # Non-fatal — a metadata fetch failure must not abort the update.
       COMMIT=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
-        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"')
-      printf '%s  %s  %s\n' \
-        "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-        "$HOSTNAME" \
-        "$COMMIT" \
-        >> /persist/manifest.txt
+        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null \
+        || echo "unknown")
+      ENTRY="$(date -u +"%Y-%m-%dT%H:%M:%SZ")  $HOSTNAME  $COMMIT"
+      echo "$ENTRY" >> /persist/manifest.txt \
+        && echo "[auto-update] Manifest updated: $ENTRY" \
+        || echo "[auto-update] Warning: could not write /persist/manifest.txt"
 
       # Reboot if the running system differs from the newly built one
       # (e.g. a new kernel was installed)
