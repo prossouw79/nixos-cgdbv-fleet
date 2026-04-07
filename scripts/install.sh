@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE_URL="github:prossouw79/nixos-cgdbv-fleet"
+
+# ── Colours ───────────────────────────────────────────────────────────────────
+RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; NC='\033[0m'
+info()  { echo -e "${GREEN}[+]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
+error() { echo -e "${RED}[✗]${NC} $*"; exit 1; }
+
+# ── Must run as root ──────────────────────────────────────────────────────────
+[[ $EUID -eq 0 ]] || error "Run as root (sudo bash install.sh)"
+
+# ── Select target device ──────────────────────────────────────────────────────
+echo ""
+echo "Available block devices:"
+echo ""
+lsblk -d -o NAME,SIZE,MODEL,TRAN | grep -v "^loop" | grep -v "^sr"
+echo ""
+
+read -rp "Target device (e.g. sda): " DEV_NAME
+DEVICE="/dev/${DEV_NAME}"
+
+[[ -b "$DEVICE" ]] || error "Device $DEVICE not found"
+
+echo ""
+warn "This will ERASE all data on $DEVICE"
+lsblk "$DEVICE"
+echo ""
+read -rp "Type YES to confirm: " CONFIRM
+[[ "$CONFIRM" == "YES" ]] || error "Aborted"
+
+# ── Select hostname ───────────────────────────────────────────────────────────
+echo ""
+echo "Available hosts:"
+echo "  1) optiplex1"
+echo "  2) optiplex2"
+echo ""
+read -rp "Select host [1/2]: " HOST_NUM
+case "$HOST_NUM" in
+  1) HOSTNAME="optiplex1" ;;
+  2) HOSTNAME="optiplex2" ;;
+  *) error "Invalid selection" ;;
+esac
+
+info "Installing $HOSTNAME onto $DEVICE"
+
+# ── Partition ─────────────────────────────────────────────────────────────────
+info "Partitioning $DEVICE..."
+parted "$DEVICE" -- mklabel gpt
+parted "$DEVICE" -- mkpart ESP fat32 1MiB 512MiB
+parted "$DEVICE" -- set 1 esp on
+parted "$DEVICE" -- mkpart primary btrfs 512MiB 100%
+
+# Give the kernel a moment to register the new partitions
+partprobe "$DEVICE"
+sleep 2
+
+PART1="${DEVICE}1"
+PART2="${DEVICE}2"
+
+# ── Format ────────────────────────────────────────────────────────────────────
+info "Formatting partitions..."
+mkfs.fat -F 32 -n BOOT "$PART1"
+mkfs.btrfs -f -L nixos "$PART2"
+
+# ── Create btrfs subvolumes ───────────────────────────────────────────────────
+info "Creating btrfs subvolumes..."
+mount "$PART2" /mnt
+
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@nix
+btrfs subvolume create /mnt/@persist
+btrfs subvolume snapshot -r /mnt/@ /mnt/@blank
+
+umount /mnt
+
+# ── Mount for install ─────────────────────────────────────────────────────────
+info "Mounting filesystems..."
+mount -o subvol=@,compress=zstd,noatime "$PART2" /mnt
+mkdir -p /mnt/{nix,persist,boot}
+mount -o subvol=@nix,compress=zstd,noatime  "$PART2" /mnt/nix
+mount -o subvol=@persist,compress=zstd,noatime "$PART2" /mnt/persist
+mount "$PART1" /mnt/boot
+
+# ── Seed /persist ─────────────────────────────────────────────────────────────
+info "Seeding /persist..."
+mkdir -p /mnt/persist/etc/ssh
+mkdir -p /mnt/persist/etc/nixos
+mkdir -p /mnt/persist/var/log
+mkdir -p /mnt/persist/opt/live-transcribe
+
+info "Generating SSH host keys..."
+ssh-keygen -t ed25519 -N "" -f /mnt/persist/etc/ssh/ssh_host_ed25519_key
+ssh-keygen -t rsa    -b 4096 -N "" -f /mnt/persist/etc/ssh/ssh_host_rsa_key
+
+echo ""
+warn "New SSH host key (update secrets/secrets.nix with this after install):"
+echo ""
+cat /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
+echo ""
+
+read -rp "Do you have a local.nix to copy in now? [y/N]: " HAS_LOCAL
+if [[ "${HAS_LOCAL,,}" == "y" ]]; then
+  read -rp "Path to local.nix: " LOCAL_NIX_PATH
+  [[ -f "$LOCAL_NIX_PATH" ]] || error "File not found: $LOCAL_NIX_PATH"
+  cp "$LOCAL_NIX_PATH" /mnt/persist/etc/nixos/local.nix
+  info "Copied local.nix"
+else
+  warn "Skipping local.nix — copy it to /persist/etc/nixos/local.nix after first boot"
+fi
+
+# ── Install ───────────────────────────────────────────────────────────────────
+info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."
+nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd
+
+echo ""
+info "Install complete."
+warn "Remember to re-encrypt agenix secrets with the new host key shown above."
+warn "Run: agenix -r  (in the repo on your admin machine)"
+echo ""
+read -rp "Reboot now? [y/N]: " DO_REBOOT
+[[ "${DO_REBOOT,,}" == "y" ]] && reboot
