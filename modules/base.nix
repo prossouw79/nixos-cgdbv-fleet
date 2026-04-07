@@ -326,6 +326,15 @@ in
         --flake "$REPO#$HOSTNAME" \
         2>&1
 
+      # Record the applied commit to /persist so it survives reboots
+      COMMIT=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
+        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"')
+      printf '%s  %s  %s\n' \
+        "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        "$HOSTNAME" \
+        "$COMMIT" \
+        >> /persist/manifest.txt
+
       # Reboot if the running system differs from the newly built one
       # (e.g. a new kernel was installed)
       booted=$(readlink /run/booted-system)
