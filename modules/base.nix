@@ -135,6 +135,16 @@ in
   environment.gnome.excludePackages = with pkgs; [
     gnome-maps gnome-music gnome-weather gnome-contacts
     gnome-calendar totem cheese epiphany
+    gnome-clocks gnome-calculator gnome-extensions-app
+    simple-scan gnome-text-editor xterm
+    baobab          # disk usage analyser
+    evince          # document viewer
+    file-roller     # file roller / archive manager
+    gnome-font-viewer
+    eog             # image viewer
+    seahorse        # passwords and keys
+    gnome-characters
+    gnome-logs
   ];
 
   # Disable screen blanking, screensaver lock, and idle power actions.
