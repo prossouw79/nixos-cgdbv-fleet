@@ -124,7 +124,7 @@ fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."
-nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd --refresh
+nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd
 
 echo ""
 info "Install complete."
