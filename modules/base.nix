@@ -69,6 +69,7 @@ in
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
+      "/var/lib/nixos"
       "/var/lib/tailscale"
       "/var/lib/docker"
       "/var/log"
