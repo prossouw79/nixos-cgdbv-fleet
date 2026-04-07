@@ -62,6 +62,15 @@ in
     mkdir -p /btrfs_tmp
     if mount -o subvolid=5 /dev/disk/by-label/nixos /btrfs_tmp; then
       echo "[rollback] Mounted btrfs top-level" > /dev/kmsg
+
+      # systemd creates btrfs subvolumes inside @ on every boot (srv, tmp,
+      # var/tmp, var/lib/machines, var/lib/portables). They must be deleted
+      # before @ itself can be deleted. Sort -r so deeper paths go first.
+      for sv in $(btrfs subvolume list -o /btrfs_tmp/@ | awk '{print $NF}' | sort -r); do
+        echo "[rollback] Deleting nested subvolume: $sv" > /dev/kmsg
+        btrfs subvolume delete "/btrfs_tmp/$sv" 2>&1 | tee /dev/kmsg || true
+      done
+
       if btrfs subvolume delete /btrfs_tmp/@ 2>&1 | tee /dev/kmsg; then
         echo "[rollback] Deleted @, syncing..." > /dev/kmsg
         sync
@@ -71,7 +80,7 @@ in
           echo "[rollback] ERROR: snapshot failed" > /dev/kmsg
         fi
       else
-        echo "[rollback] ERROR: delete failed" > /dev/kmsg
+        echo "[rollback] ERROR: delete @ failed" > /dev/kmsg
       fi
       umount /btrfs_tmp
     else
