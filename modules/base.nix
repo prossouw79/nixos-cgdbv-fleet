@@ -246,6 +246,7 @@ in
     "d /opt/docker-compose/transcribe 0755 root root -"
     "L+ /opt/docker-compose/transcribe/docker-compose.yml - - - - ${transcribeComposeFile}"
     "L+ /opt/docker-compose/transcribe/config.yaml - - - - ${transcribeConfigFile}"
+    "d /home/admin                             0755 admin admin -"
     "d /home/admin/.local                      0755 admin admin -"
     "d /home/admin/.local/share                0755 admin admin -"
     "d /home/admin/.local/share/applications   0755 admin admin -"
