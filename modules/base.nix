@@ -271,6 +271,8 @@ in
           --hide-crash-restore-bubble \
           --noerrdialogs \
           --start-fullscreen \
+          --password-store=basic \
+          --no-first-run \
           http://localhost:8885
       '';
       Restart    = "on-failure";
