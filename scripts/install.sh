@@ -19,7 +19,7 @@ echo ""
 lsblk -d -o NAME,SIZE,MODEL,TRAN | grep -v "^loop" | grep -v "^sr"
 echo ""
 
-read -rp "Target device (e.g. sda): " DEV_NAME
+read -rp "Target device (e.g. sda): " DEV_NAME </dev/tty
 DEVICE="/dev/${DEV_NAME}"
 
 [[ -b "$DEVICE" ]] || error "Device $DEVICE not found"
@@ -28,7 +28,7 @@ echo ""
 warn "This will ERASE all data on $DEVICE"
 lsblk "$DEVICE"
 echo ""
-read -rp "Type YES to confirm: " CONFIRM
+read -rp "Type YES to confirm: " CONFIRM </dev/tty
 [[ "$CONFIRM" == "YES" ]] || error "Aborted"
 
 # ── Select hostname ───────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ echo "Available hosts:"
 echo "  1) optiplex1"
 echo "  2) optiplex2"
 echo ""
-read -rp "Select host [1/2]: " HOST_NUM
+read -rp "Select host [1/2]: " HOST_NUM </dev/tty
 case "$HOST_NUM" in
   1) HOSTNAME="optiplex1" ;;
   2) HOSTNAME="optiplex2" ;;
@@ -101,9 +101,9 @@ echo ""
 cat /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
 echo ""
 
-read -rp "Do you have a local.nix to copy in now? [y/N]: " HAS_LOCAL
+read -rp "Do you have a local.nix to copy in now? [y/N]: " HAS_LOCAL </dev/tty
 if [[ "${HAS_LOCAL,,}" == "y" ]]; then
-  read -rp "Path to local.nix: " LOCAL_NIX_PATH
+  read -rp "Path to local.nix: " LOCAL_NIX_PATH </dev/tty
   [[ -f "$LOCAL_NIX_PATH" ]] || error "File not found: $LOCAL_NIX_PATH"
   cp "$LOCAL_NIX_PATH" /mnt/persist/etc/nixos/local.nix
   info "Copied local.nix"
@@ -120,5 +120,5 @@ info "Install complete."
 warn "Remember to re-encrypt agenix secrets with the new host key shown above."
 warn "Run: agenix -r  (in the repo on your admin machine)"
 echo ""
-read -rp "Reboot now? [y/N]: " DO_REBOOT
+read -rp "Reboot now? [y/N]: " DO_REBOOT </dev/tty
 [[ "${DO_REBOOT,,}" == "y" ]] && reboot
