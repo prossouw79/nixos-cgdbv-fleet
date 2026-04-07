@@ -3,7 +3,7 @@ COMPOSE   := docker compose run --rm nix
 GIT_SAFE  := git config --global --add safe.directory /repo
 HOST      ?= optiplex1
 
-.PHONY: check build eval hosts shell clean
+.PHONY: check build eval hosts shell clean lock
 
 ## Fast: evaluate all configs — catches syntax and type errors without building
 ## --impure is required because host configs import /etc/nixos/local.nix
@@ -33,6 +33,10 @@ hosts:
 ## Drop into a nix shell in the container for manual inspection
 shell:
 	docker compose run --rm --entrypoint sh nix
+
+## Update flake.lock — run this after adding new inputs to flake.nix
+lock:
+	$(COMPOSE) sh -c '$(GIT_SAFE) && nix flake lock'
 
 ## Remove the cached nix store volume (frees disk space)
 clean:
