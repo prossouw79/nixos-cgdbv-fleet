@@ -58,12 +58,25 @@ in
   # Roll back @ to the blank snapshot on every boot
   boot.initrd.supportedFilesystems = [ "btrfs" ];
   boot.initrd.postDeviceCommands = lib.mkAfter ''
-    mkdir /btrfs_tmp
-    mount -o subvolid=5 /dev/disk/by-label/nixos /btrfs_tmp
-    btrfs subvolume delete /btrfs_tmp/@
-    sync
-    btrfs subvolume snapshot /btrfs_tmp/@blank /btrfs_tmp/@
-    umount /btrfs_tmp
+    echo "[rollback] Starting btrfs root rollback" > /dev/kmsg
+    mkdir -p /btrfs_tmp
+    if mount -o subvolid=5 /dev/disk/by-label/nixos /btrfs_tmp; then
+      echo "[rollback] Mounted btrfs top-level" > /dev/kmsg
+      if btrfs subvolume delete /btrfs_tmp/@ 2>&1 | tee /dev/kmsg; then
+        echo "[rollback] Deleted @, syncing..." > /dev/kmsg
+        sync
+        if btrfs subvolume snapshot /btrfs_tmp/@blank /btrfs_tmp/@ 2>&1 | tee /dev/kmsg; then
+          echo "[rollback] Snapshot created successfully" > /dev/kmsg
+        else
+          echo "[rollback] ERROR: snapshot failed" > /dev/kmsg
+        fi
+      else
+        echo "[rollback] ERROR: delete failed" > /dev/kmsg
+      fi
+      umount /btrfs_tmp
+    else
+      echo "[rollback] ERROR: mount failed" > /dev/kmsg
+    fi
   '';
 
   # ── Persistence ───────────────────────────────────────────────
