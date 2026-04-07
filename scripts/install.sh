@@ -57,6 +57,17 @@ esac
 
 info "Installing $HOSTNAME onto $DEVICE"
 
+# ── Wipe existing mounts and partitions ───────────────────────────────────────
+info "Cleaning up any existing mounts on $DEVICE..."
+# Unmount everything under /mnt (silently — may not be mounted)
+umount -R /mnt 2>/dev/null || true
+# Unmount any other mounts directly on the device's partitions
+for part in "${DEVICE}"?*; do
+  umount -R "$part" 2>/dev/null || true
+done
+# Wipe partition table and any filesystem signatures so parted starts clean
+wipefs -a "$DEVICE"
+
 # ── Partition ─────────────────────────────────────────────────────────────────
 info "Partitioning $DEVICE..."
 parted -s "$DEVICE" -- mklabel gpt
