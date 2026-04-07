@@ -97,6 +97,7 @@ in
       "/var/lib/docker"
       "/var/log"
       "/opt/live-transcribe"
+      { directory = "/home/admin/.local/share/keyrings"; user = "admin"; group = "admin"; mode = "0700"; }
     ];
     files = [
       "/etc/ssh/ssh_host_ed25519_key"
@@ -150,6 +151,7 @@ in
         power-button-action         = "nothing";
       };
       "org/gnome/shell".enabled-extensions = [ "no-overview@fthx" ];
+      "org/gnome/shell".welcome-dialog-last-shown-version = "9999";
     };
     locks = [
       "/org/gnome/desktop/session/idle-delay"
@@ -159,6 +161,13 @@ in
       "/org/gnome/settings-daemon/plugins/power/power-button-action"
     ];
   }];
+
+  # ── GNOME Keyring ─────────────────────────────────────────────
+  # Auto-unlock the keyring on login. gdm-autologin is the PAM service used
+  # when auto-login is enabled — hooking it here means gnome-keyring-daemon
+  # receives the (empty) credentials at login and unlocks without prompting.
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.gdm-autologin.enableGnomeKeyring = true;
 
   # ── Audio ─────────────────────────────────────────────────────
   hardware.pulseaudio.enable = false;
@@ -299,6 +308,9 @@ in
           --start-fullscreen \
           --password-store=basic \
           --no-first-run \
+          --disable-default-browser-check \
+          --no-default-browser-check \
+          --metrics-recording-only \
           http://localhost:8885
       '';
       Restart    = "on-failure";
