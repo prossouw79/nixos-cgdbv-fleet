@@ -61,6 +61,7 @@ in
     mkdir /btrfs_tmp
     mount /dev/disk/by-label/nixos /btrfs_tmp
     btrfs subvolume delete /btrfs_tmp/@
+    sync
     btrfs subvolume snapshot /btrfs_tmp/@blank /btrfs_tmp/@
     umount /btrfs_tmp
   '';
@@ -342,7 +343,7 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec          = "1min";
-      OnUnitActiveSec    = "15min";
+      OnUnitActiveSec    = "5min";
       RandomizedDelaySec = "10sec";
     };
   };
