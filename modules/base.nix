@@ -59,7 +59,7 @@ in
   boot.initrd.supportedFilesystems = [ "btrfs" ];
   boot.initrd.postDeviceCommands = lib.mkAfter ''
     mkdir /btrfs_tmp
-    mount /dev/disk/by-label/nixos /btrfs_tmp
+    mount -o subvolid=5 /dev/disk/by-label/nixos /btrfs_tmp
     btrfs subvolume delete /btrfs_tmp/@
     sync
     btrfs subvolume snapshot /btrfs_tmp/@blank /btrfs_tmp/@
