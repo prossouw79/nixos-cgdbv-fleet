@@ -48,10 +48,10 @@ info "Installing $HOSTNAME onto $DEVICE"
 
 # ── Partition ─────────────────────────────────────────────────────────────────
 info "Partitioning $DEVICE..."
-parted "$DEVICE" -- mklabel gpt
-parted "$DEVICE" -- mkpart ESP fat32 1MiB 512MiB
-parted "$DEVICE" -- set 1 esp on
-parted "$DEVICE" -- mkpart primary btrfs 512MiB 100%
+parted -s "$DEVICE" -- mklabel gpt
+parted -s "$DEVICE" -- mkpart ESP fat32 1MiB 512MiB
+parted -s "$DEVICE" -- set 1 esp on
+parted -s "$DEVICE" -- mkpart primary btrfs 512MiB 100%
 
 # Give the kernel a moment to register the new partitions
 partprobe "$DEVICE"
