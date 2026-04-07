@@ -59,6 +59,8 @@ in
   boot.initrd.supportedFilesystems = [ "btrfs" ];
   boot.initrd.postDeviceCommands = lib.mkAfter ''
     echo "[rollback] Starting btrfs root rollback" > /dev/kmsg
+    udevadm settle
+    btrfs device scan
     mkdir -p /btrfs_tmp
     if mount -o subvolid=5 /dev/disk/by-label/nixos /btrfs_tmp; then
       echo "[rollback] Mounted btrfs top-level" > /dev/kmsg
