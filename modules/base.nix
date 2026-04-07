@@ -192,8 +192,8 @@ in
   environment.systemPackages = with pkgs; [
     # ── Desktop / user apps ───────────────────────────────────────
     google-chrome
-    #vlc
-    #vscode
+    vlc
+    vscode
     gnomeExtensions.no-overview
 
     # ── Dev tools ─────────────────────────────────────────────────
@@ -207,14 +207,14 @@ in
     # ── System utilities ──────────────────────────────────────────
     curl
     wget
-    #rsync
-    #file
-    #tree
-    #unzip
-    #zip
-    #jq
-    #tmux
-    #vim
+    rsync
+    file
+    tree
+    unzip
+    zip
+    jq
+    tmux
+    vim
     nano
     ethtool   # used by WoL udev rule
 
@@ -229,7 +229,7 @@ in
     nettools      # netstat, route, arp
     nmap
     bmon
-    #nethogs
+    nethogs
     dig
 
     # ── Hardware inspection ───────────────────────────────────────
