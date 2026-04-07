@@ -3,7 +3,7 @@ COMPOSE   := docker compose run --rm nix
 GIT_SAFE  := git config --global --add safe.directory /repo
 HOST      ?= optiplex1
 
-.PHONY: check build eval hosts shell clean lock
+.PHONY: check build eval hosts iso shell clean lock
 
 ## Fast: evaluate all configs — catches syntax and type errors without building
 ## --impure is required because host configs import /etc/nixos/local.nix
@@ -29,6 +29,16 @@ eval:
 ## List all hosts defined in flake.nix
 hosts:
 	$(COMPOSE) sh -c '$(GIT_SAFE) && nix eval .#nixosConfigurations --apply builtins.attrNames'
+
+## Build a bootable installer ISO and copy it to ./nixos-fleet.iso on the host
+## Flash to USB: sudo dd if=nixos-fleet.iso of=/dev/sdX bs=4M status=progress conv=fsync
+iso:
+	git add -A
+	$(COMPOSE) sh -c '$(GIT_SAFE) && nix build \
+		.#nixosConfigurations.iso.config.system.build.isoImage \
+		--option sandbox false && \
+		cp -L result/iso/*.iso /repo/nixos-fleet.iso'
+	@echo "ISO written to: $(PWD)/nixos-fleet.iso"
 
 ## Drop into a nix shell in the container for manual inspection
 shell:

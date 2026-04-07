@@ -39,6 +39,41 @@
         ];
       };
 
+      # Generic host — base layer only, no machine-specific config.
+      # Used as the install target on the offline ISO.
+      generic = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          agenix.nixosModules.default
+          impermanence.nixosModules.impermanence
+          ./modules/base.nix
+          ./hosts/generic/configuration.nix
+        ];
+      };
+
+      # Bootable installer ISO — flash to USB with:
+      #   dd if=result/iso/*.iso of=/dev/sdX bs=4M status=progress
+      # Boots to a shell; run: nixos-install --flake /iso/flake#generic
+      iso = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          {
+            # Pre-load the fleet admin SSH key so you can log in remotely during install
+            users.users.nixos.openssh.authorizedKeys.keys = [
+              "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBMYHX4vj6LafDI0GkMMhs+lzLEWI+wF56gVXBd0tOw cgdbv-fleet-admin"
+            ];
+            services.openssh.enable = true;
+
+            # Bake the generic host closure into the ISO's nix store for offline install
+            isoImage.storeContents = [
+              self.nixosConfigurations.generic.config.system.build.toplevel
+            ];
+          }
+        ];
+      };
+
     };
   };
 }
