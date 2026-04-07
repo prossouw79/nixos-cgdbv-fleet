@@ -133,10 +133,20 @@ in
 
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
   environment.gnome.excludePackages = with pkgs; [
-    gnome-maps gnome-music gnome-weather gnome-contacts
-    gnome-calendar totem cheese epiphany
-    gnome-clocks gnome-calculator gnome-extensions-app
-    simple-scan gnome-text-editor xterm
+    gnome-maps 
+    gnome-music 
+    gnome-weather 
+    gnome-contacts
+    gnome-calendar 
+    totem
+    cheese
+    epiphany
+    gnome-clocks
+    gnome-calculator
+    #gnome-extensions-app
+    simple-scan 
+    gnome-text-editor
+    xterm
     baobab          # disk usage analyser
     evince          # document viewer
     file-roller     # file roller / archive manager
