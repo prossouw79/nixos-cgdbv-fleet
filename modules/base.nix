@@ -59,8 +59,6 @@ in
   boot.initrd.supportedFilesystems = [ "btrfs" ];
   boot.initrd.postDeviceCommands = lib.mkAfter ''
     echo "[rollback] Starting btrfs root rollback" > /dev/kmsg
-    udevadm settle
-    btrfs device scan
     mkdir -p /btrfs_tmp
     if mount -o subvolid=5 /dev/disk/by-label/nixos /btrfs_tmp; then
       echo "[rollback] Mounted btrfs top-level" > /dev/kmsg
@@ -111,6 +109,9 @@ in
 
   # ── Hardware firmware ─────────────────────────────────────────
   hardware.enableRedistributableFirmware = true;
+
+  # VirtIO drivers for Proxmox/QEMU VMs — harmless on physical hardware
+  boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" "virtio_scsi" ];
 
   # ── Networking ────────────────────────────────────────────────
   networking.networkmanager.enable = true;
