@@ -30,11 +30,57 @@ in
     "kernel.panic_on_oops" = 1;
   };
 
-  # Placeholder root filesystem — overridden by hardware-configuration.nix
-  # generated during nixos-install on each device.
-  fileSystems."/" = lib.mkDefault {
+  # ── Filesystems (btrfs subvolumes) ───────────────────────────
+  fileSystems."/" = {
     device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
+    fsType = "btrfs";
+    options = [ "subvol=@" "compress=zstd" "noatime" ];
+  };
+
+  fileSystems."/nix" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "btrfs";
+    options = [ "subvol=@nix" "compress=zstd" "noatime" ];
+  };
+
+  fileSystems."/persist" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "btrfs";
+    options = [ "subvol=@persist" "compress=zstd" "noatime" ];
+    neededForBoot = true;
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-label/BOOT";
+    fsType = "vfat";
+  };
+
+  # Roll back @ to the blank snapshot on every boot
+  boot.initrd.supportedFilesystems = [ "btrfs" ];
+  boot.initrd.postDeviceCommands = lib.mkAfter ''
+    mkdir /btrfs_tmp
+    mount /dev/disk/by-label/nixos /btrfs_tmp
+    btrfs subvolume delete /btrfs_tmp/@
+    btrfs subvolume snapshot /btrfs_tmp/@blank /btrfs_tmp/@
+    umount /btrfs_tmp
+  '';
+
+  # ── Persistence ───────────────────────────────────────────────
+  environment.persistence."/persist" = {
+    hideMounts = true;
+    directories = [
+      "/var/lib/tailscale"
+      "/var/lib/docker"
+      "/var/log"
+      "/opt/live-transcribe"
+    ];
+    files = [
+      "/etc/ssh/ssh_host_ed25519_key"
+      "/etc/ssh/ssh_host_ed25519_key.pub"
+      "/etc/ssh/ssh_host_rsa_key"
+      "/etc/ssh/ssh_host_rsa_key.pub"
+      "/etc/nixos/local.nix"
+    ];
   };
 
   # ── Hardware firmware ─────────────────────────────────────────
