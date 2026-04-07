@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-FLAKE_URL="github:prossouw79/nixos-cgdbv-fleet"
+# Use the local repo if the script is being run from a clone, otherwise fall
+# back to GitHub. Running from a local clone guarantees the pulled commit is
+# exactly what gets installed rather than relying on nix's remote fetch cache.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-scripts/install.sh}")" 2>/dev/null && pwd || true)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+if [[ -f "$REPO_ROOT/flake.nix" ]]; then
+  FLAKE_URL="$REPO_ROOT"
+  info "Using local repo at $FLAKE_URL"
+else
+  FLAKE_URL="github:prossouw79/nixos-cgdbv-fleet"
+  warn "Could not detect local repo — fetching from GitHub (run from a git clone for reproducible installs)"
+fi
 
 # ── Colours ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; NC='\033[0m'
@@ -113,7 +124,7 @@ fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."
-nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd
+nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd --refresh
 
 echo ""
 info "Install complete."
