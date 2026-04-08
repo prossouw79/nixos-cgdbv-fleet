@@ -119,26 +119,28 @@ in
   networking.networkmanager.wifi.powersave = false; # prevent WiFi disconnects on idle
   networking.firewall.enable = true;
 
-  # Fleet WiFi networks — credentials injected at activation from the agenix secret.
-  # Replace SSID placeholders with the real network names.
-  # The wifi-credentials.age secret must export two variables:
-  #   WIFI_PRIMARY_PSK=<psk for primary network>
-  #   WIFI_SECONDARY_PSK=<psk for secondary network>
+  # Fleet WiFi networks — all credentials (SSIDs and PSKs) injected at
+  # activation from the agenix secret. Nothing identifying appears in the repo.
+  # The wifi-credentials.age secret must export four variables:
+  #   WIFI_PRIMARY_SSID=<ssid of primary network>
+  #   WIFI_PRIMARY_PSK=<psk of primary network>
+  #   WIFI_SECONDARY_SSID=<ssid of secondary network>
+  #   WIFI_SECONDARY_PSK=<psk of secondary network>
   networking.networkmanager.ensureProfiles = {
     environmentFiles = [ config.age.secrets.wifi-credentials.path ];
     profiles = {
-      # TODO: replace "FLEET_WIFI_PRIMARY" with the real SSID in both keys and ssid field
-      "FLEET_WIFI_PRIMARY" = {
-        connection = { id = "FLEET_WIFI_PRIMARY"; type = "wifi"; };
-        wifi       = { mode = "infrastructure"; ssid = "FLEET_WIFI_PRIMARY"; };
+      # Profile keys are internal NM connection file names — generic is fine.
+      # The actual SSID NetworkManager scans for is the wifi.ssid value below.
+      "fleet-wifi-primary" = {
+        connection = { id = "$WIFI_PRIMARY_SSID"; type = "wifi"; };
+        wifi       = { mode = "infrastructure"; ssid = "$WIFI_PRIMARY_SSID"; };
         "wifi-security" = { key-mgmt = "wpa-psk"; psk = "$WIFI_PRIMARY_PSK"; };
         ipv4.method = "auto";
         ipv6.method = "auto";
       };
-      # TODO: replace "FLEET_WIFI_SECONDARY" with the real SSID in both keys and ssid field
-      "FLEET_WIFI_SECONDARY" = {
-        connection = { id = "FLEET_WIFI_SECONDARY"; type = "wifi"; };
-        wifi       = { mode = "infrastructure"; ssid = "FLEET_WIFI_SECONDARY"; };
+      "fleet-wifi-secondary" = {
+        connection = { id = "$WIFI_SECONDARY_SSID"; type = "wifi"; };
+        wifi       = { mode = "infrastructure"; ssid = "$WIFI_SECONDARY_SSID"; };
         "wifi-security" = { key-mgmt = "wpa-psk"; psk = "$WIFI_SECONDARY_PSK"; };
         ipv4.method = "auto";
         ipv6.method = "auto";

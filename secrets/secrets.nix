@@ -27,7 +27,7 @@ in
   # Secret file formats:
   #   tailscale-authkey.age        plain text  — tskey-auth-xxxxxxxxxxxx
   #   dockerhub-credentials.age    JSON        — {"username":"...","password":"..."}
-  #   wifi-credentials.age         env vars    — WIFI_PRIMARY_PSK=...\nWIFI_SECONDARY_PSK=...
+  #   wifi-credentials.age         env vars    — WIFI_PRIMARY_SSID=...\nWIFI_PRIMARY_PSK=...\nWIFI_SECONDARY_SSID=...\nWIFI_SECONDARY_PSK=...
 
   # Tailscale auth key — used by services.tailscale.authKeyFile on each node.
   # Use a *reusable*, non-ephemeral key from the Tailscale admin console so
