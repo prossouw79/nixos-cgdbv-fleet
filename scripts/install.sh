@@ -47,11 +47,13 @@ echo ""
 echo "Available hosts:"
 echo "  1) optiplex1"
 echo "  2) optiplex2"
+echo "  3) intelnuc"
 echo ""
 read -rp "Select host [1/2]: " HOST_NUM </dev/tty
 case "$HOST_NUM" in
   1) HOSTNAME="optiplex1" ;;
   2) HOSTNAME="optiplex2" ;;
+  3) HOSTNAME="intelnuc" ;;
   *) error "Invalid selection" ;;
 esac
 
