@@ -119,6 +119,33 @@ in
   networking.networkmanager.wifi.powersave = false; # prevent WiFi disconnects on idle
   networking.firewall.enable = true;
 
+  # Fleet WiFi networks — credentials injected at activation from the agenix secret.
+  # Replace SSID placeholders with the real network names.
+  # The wifi-credentials.age secret must export two variables:
+  #   WIFI_PRIMARY_PSK=<psk for primary network>
+  #   WIFI_SECONDARY_PSK=<psk for secondary network>
+  networking.networkmanager.ensureProfiles = {
+    environmentFiles = [ config.age.secrets.wifi-credentials.path ];
+    profiles = {
+      # TODO: replace "FLEET_WIFI_PRIMARY" with the real SSID in both keys and ssid field
+      "FLEET_WIFI_PRIMARY" = {
+        connection = { id = "FLEET_WIFI_PRIMARY"; type = "wifi"; };
+        wifi       = { mode = "infrastructure"; ssid = "FLEET_WIFI_PRIMARY"; };
+        "wifi-security" = { key-mgmt = "wpa-psk"; psk = "$WIFI_PRIMARY_PSK"; };
+        ipv4.method = "auto";
+        ipv6.method = "auto";
+      };
+      # TODO: replace "FLEET_WIFI_SECONDARY" with the real SSID in both keys and ssid field
+      "FLEET_WIFI_SECONDARY" = {
+        connection = { id = "FLEET_WIFI_SECONDARY"; type = "wifi"; };
+        wifi       = { mode = "infrastructure"; ssid = "FLEET_WIFI_SECONDARY"; };
+        "wifi-security" = { key-mgmt = "wpa-psk"; psk = "$WIFI_SECONDARY_PSK"; };
+        ipv4.method = "auto";
+        ipv6.method = "auto";
+      };
+    };
+  };
+
   # Wake-on-LAN for all ethernet interfaces (also requires BIOS setting)
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|en*", \
@@ -274,11 +301,33 @@ in
     "d /home/admin/Downloads                   0755 admin admin -"
   ];
 
+  # Authenticate the Docker daemon with DockerHub before any pulls happen.
+  # Credentials come from the agenix-managed secret (JSON: {"username":"...","password":"..."}).
+  # Runs once per boot as a oneshot; restarts automatically if the secret is rotated.
+  systemd.services.docker-login = {
+    description = "Authenticate Docker daemon with DockerHub";
+    after    = [ "docker.service" ];
+    requires = [ "docker.service" ];
+    before   = [ "transcribe-docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    restartTriggers = [ config.age.secrets.dockerhub-credentials.path ];
+    serviceConfig = {
+      Type            = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      creds="${config.age.secrets.dockerhub-credentials.path}"
+      user=$(${pkgs.jq}/bin/jq -r .username "$creds")
+      pass=$(${pkgs.jq}/bin/jq -r .password "$creds")
+      echo "$pass" | ${pkgs.docker}/bin/docker login -u "$user" --password-stdin
+    '';
+  };
+
   # Start transcribe via docker-compose on boot (after Docker is ready)
   systemd.services.transcribe-docker = {
     description = "Nginx Docker Compose (port 8885)";
-    after    = [ "docker.service" "network-online.target" ];
-    requires = [ "docker.service" ];
+    after    = [ "docker.service" "docker-login.service" "network-online.target" ];
+    requires = [ "docker.service" "docker-login.service" ];
     wants    = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
@@ -464,11 +513,25 @@ in
   # ── Monitoring ────────────────────────────────────────────────
   services.glances.enable = true;
 
+  # ── Secrets (agenix) ──────────────────────────────────────────
+  # Prerequisites before these activate:
+  #   1. Replace placeholder keys in secrets/secrets.nix with real device host keys.
+  #   2. Run: agenix -e secrets/<name>.age  to create each encrypted file.
+  #   3. Commit the .age files; the auto-update service will distribute them.
+  age.secrets.tailscale-authkey.file     = ../secrets/tailscale-authkey.age;
+  age.secrets.dockerhub-credentials.file = ../secrets/dockerhub-credentials.age;
+  age.secrets.wifi-credentials.file      = ../secrets/wifi-credentials.age;
+
   # ── Tailscale ─────────────────────────────────────────────────
   services.tailscale.enable = true;
   networking.firewall.trustedInterfaces  = [ "tailscale0" ];
   networking.firewall.allowedUDPPorts    = [ config.services.tailscale.port ];
-  # After first boot: sudo tailscale up --authkey=<your-key>
+  # Automatically authenticates on first boot (or after reinstall).
+  # authKeyFile is only consumed when the node is not already enrolled —
+  # it is safe to leave this set permanently.
+  # Use a *reusable* key from the Tailscale admin console so all devices
+  # can enrol without rotating the secret.
+  services.tailscale.authKeyFile = config.age.secrets.tailscale-authkey.path;
 
   # ── Users ─────────────────────────────────────────────────────
   users.groups.admin.gid = 1000;
