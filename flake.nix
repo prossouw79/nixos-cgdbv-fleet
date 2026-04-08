@@ -52,6 +52,17 @@
         ];
       };
 
+      intelnuc = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          agenix.nixosModules.default
+          impermanence.nixosModules.impermanence
+          ./modules/base.nix
+          ./hosts/intelnuc/configuration.nix
+        ];
+      };
+
       # Bootable installer ISO — flash to USB with:
       #   dd if=result/iso/*.iso of=/dev/sdX bs=4M status=progress
       # Boots to a shell; run: nixos-install --flake /iso/flake#generic
