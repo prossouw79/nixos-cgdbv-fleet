@@ -533,7 +533,12 @@ in
   # it is safe to leave this set permanently.
   # Use a *reusable* key from the Tailscale admin console so all devices
   # can enrol without rotating the secret.
-  services.tailscale.authKeyFile = config.age.secrets.tailscale-authkey.path;
+  services.tailscale.authKeyFile  = config.age.secrets.tailscale-authkey.path;
+  services.tailscale.extraUpFlags = [
+    "--ssh"            # enable Tailscale SSH over the tailnet (coexists with sshd)
+    "--accept-routes"  # honour subnet routes advertised by other tailnet nodes
+    "--accept-dns"     # use Tailscale MagicDNS / custom nameservers
+  ];
 
   # ── Users ─────────────────────────────────────────────────────
   users.groups.admin.gid = 1000;
