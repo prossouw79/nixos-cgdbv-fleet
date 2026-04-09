@@ -63,10 +63,10 @@ esac
 echo ""
 read -rp "Local Nix cache IP/host (leave blank to skip): " CACHE_HOST </dev/tty
 if [[ -n "$CACHE_HOST" ]]; then
-  EXTRA_NIX_OPTS="--option substituters 'http://${CACHE_HOST}:5000 https://cache.nixos.org' --option require-sigs false"
+  EXTRA_NIX_OPTS=(--option substituters "http://${CACHE_HOST}:5000 https://cache.nixos.org" --option require-sigs false)
   info "Using local cache at http://${CACHE_HOST}:5000"
 else
-  EXTRA_NIX_OPTS=""
+  EXTRA_NIX_OPTS=()
 fi
 
 # ── Optional Tailscale pre-auth ───────────────────────────────────────────────
@@ -155,7 +155,7 @@ fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."
-nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd $EXTRA_NIX_OPTS
+nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd "${EXTRA_NIX_OPTS[@]}"
 
 echo ""
 info "Install complete."
