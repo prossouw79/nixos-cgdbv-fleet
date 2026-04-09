@@ -1,11 +1,4 @@
 { pkgs, lib, ... }:
-let
-  trayscaleAutostart = pkgs.makeDesktopItem {
-    name        = "trayscale-autostart";
-    desktopName = "Trayscale";
-    exec        = "${pkgs.trayscale}/bin/trayscale --hide-window";
-  };
-in
 {
   # ── GNOME ─────────────────────────────────────────────────────
   services.xserver.enable = true;
@@ -65,7 +58,13 @@ in
 
   # ── Trayscale (Tailscale tray applet) ────────────────────────
   environment.systemPackages = [ pkgs.trayscale pkgs.gnomeExtensions.appindicator ];
-  xdg.autostart.entries = [ trayscaleAutostart ];
+  environment.etc."xdg/autostart/trayscale.desktop".text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=Trayscale
+    Exec=${pkgs.trayscale}/bin/trayscale --hide-window
+    X-GNOME-Autostart-enabled=true
+  '';
 
   # ── GNOME Keyring ─────────────────────────────────────────────
   # Auto-unlock the keyring on login. gdm-autologin is the PAM service used
