@@ -49,7 +49,8 @@
       # Appearance — dark mode
       "org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
-      # Notifications — disable calendar/events reminders
+      # Notifications — do not disturb + disable calendar/events reminders
+      "org/gnome/desktop/notifications".show-banners                             = false;
       "org/gnome/desktop/notifications/application/gnome-calendar".show-banners = false;
       "org/gnome/desktop/notifications/application/gnome-clocks".show-banners   = false;
 
