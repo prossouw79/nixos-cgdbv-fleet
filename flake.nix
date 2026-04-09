@@ -23,7 +23,7 @@
         modules = [
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
-          ./modules/base.nix
+          ./modules
           ./hosts/optiplex1/configuration.nix
         ];
       };
@@ -34,7 +34,7 @@
         modules = [
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
-          ./modules/base.nix
+          ./modules
           ./hosts/optiplex2/configuration.nix
         ];
       };
@@ -45,7 +45,7 @@
         modules = [
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
-          ./modules/base.nix
+          ./modules
           ./hosts/testvm/configuration.nix
         ];
       };
@@ -56,7 +56,7 @@
         modules = [
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
-          ./modules/base.nix
+          ./modules
           ./hosts/intelnuc/configuration.nix
         ];
       };
