@@ -58,16 +58,23 @@ in
 
       GEN_BEFORE=$(readlink /run/current-system)
 
-      if ! /run/current-system/sw/bin/nixos-rebuild switch \
-          --flake "$REPO#$HOSTNAME" \
-          2>&1; then
-        ${errorDialog} "Update failed on $HOSTNAME.\n\nCheck logs with:\njournalctl -u nixos-auto-update" || true
-        echo "[auto-update] Switch failed"
+      # Capture exit code without triggering set -e.
+      # Code 0: success. Code 4: activation warnings (partial success, generation
+      # may still have been built). Anything else is a real failure.
+      /run/current-system/sw/bin/nixos-rebuild switch \
+        --flake "$REPO#$HOSTNAME" \
+        2>&1 || REBUILD_EXIT=$?
+      REBUILD_EXIT=''${REBUILD_EXIT:-0}
+
+      GEN_AFTER=$(readlink /run/current-system)
+
+      if [ "$REBUILD_EXIT" -ne 0 ] && [ "$GEN_BEFORE" = "$GEN_AFTER" ]; then
+        ${errorDialog} "Update failed on $HOSTNAME (exit $REBUILD_EXIT).\n\nCheck logs with:\njournalctl -u nixos-auto-update" || true
+        echo "[auto-update] Switch failed (exit $REBUILD_EXIT, generation unchanged)"
         exit 1
       fi
 
-      GEN_AFTER=$(readlink /run/current-system)
-      echo "[auto-update] Switch succeeded"
+      echo "[auto-update] Switch succeeded (exit $REBUILD_EXIT)"
 
       # Record the applied commit to /persist so it survives reboots.
       # Non-fatal — a metadata fetch failure must not abort the update.
