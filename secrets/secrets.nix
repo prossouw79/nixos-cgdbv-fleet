@@ -10,9 +10,10 @@ let
   optiplex1 = "ssh-ed25519 AAAA__REPLACE_WITH_OPTIPLEX1_HOST_KEY__ root@optiplex1";
   optiplex2 = "ssh-ed25519 AAAA__REPLACE_WITH_OPTIPLEX2_HOST_KEY__ root@optiplex2";
   intelnuc  = "ssh-ed25519 AAAA__REPLACE_WITH_INTELNUC_HOST_KEY__  root@intelnuc";
+  testvm  = "ssh-ed25519 AAAA__REPLACE_WITH_INTELNUC_HOST_KEY__  root@testvm";
 
   # ── Shorthand groups ──────────────────────────────────────────────
-  allDevices = [ admin optiplex1 optiplex2 intelnuc ];
+  allDevices = [ admin optiplex1 optiplex2 intelnuc testvm];
 in
 {
   # Each .age file lists the public keys that are allowed to decrypt it.

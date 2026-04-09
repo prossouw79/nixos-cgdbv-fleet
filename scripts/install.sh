@@ -45,12 +45,14 @@ read -rp "Type YES to confirm: " CONFIRM </dev/tty
 # ── Select hostname ───────────────────────────────────────────────────────────
 echo ""
 echo "Available hosts:"
+echo "  0) testvm"
 echo "  1) optiplex1"
 echo "  2) optiplex2"
 echo "  3) intelnuc"
 echo ""
-read -rp "Select host [1-3]: " HOST_NUM </dev/tty
+read -rp "Select host [0-3]: " HOST_NUM </dev/tty
 case "$HOST_NUM" in
+  0) HOSTNAME="testvm" ;;
   1) HOSTNAME="optiplex1" ;;
   2) HOSTNAME="optiplex2" ;;
   3) HOSTNAME="intelnuc" ;;
