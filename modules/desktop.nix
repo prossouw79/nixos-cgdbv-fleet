@@ -4,6 +4,7 @@
   services.xserver.enable = true;
   services.displayManager.gdm.enable = true;
   services.displayManager.gdm.autoSuspend = false;
+  services.displayManager.gdm.wayland = false; # force X11 for reliable xrandr resolution control
   services.desktopManager.gnome.enable = true;
 
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
@@ -55,6 +56,18 @@
       "/org/gnome/settings-daemon/plugins/power/power-button-action"
     ];
   }];
+
+  # ── Resolution cap ───────────────────────────────────────────
+  # On 4K displays the UI becomes too small. This autostart script caps every
+  # connected output to 1920x1080 at login if the current resolution exceeds it.
+  # Works across HDMI, DisplayPort, and VGA without knowing the adapter in advance.
+  environment.etc."xdg/autostart/cap-resolution.desktop".text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=Cap Resolution
+    Exec=${pkgs.bash}/bin/bash -c '${pkgs.xorg.xrandr}/bin/xrandr | ${pkgs.gawk}/bin/awk "/connected/{out=$1} /\*/{split($1,r,\"x\"); if(out && (r[1]+0>1920 || r[2]+0>1080)) print out}" | while read o; do ${pkgs.xorg.xrandr}/bin/xrandr --output "$o" --mode 1920x1080; done'
+    X-GNOME-Autostart-enabled=true
+  '';
 
   # ── Trayscale (Tailscale tray applet) ────────────────────────
   environment.systemPackages = [ pkgs.trayscale pkgs.gnomeExtensions.appindicator ];
