@@ -56,9 +56,20 @@ in
       echo "[auto-update] Applying config for host: $HOSTNAME"
       ${notifyUser} low "System Update" "Applying configuration update..." || true
 
+      REV_STATE=/persist/current-rev
       GEN_BEFORE=$(readlink /run/current-system)
-      REV_BEFORE=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
+      REV_BEFORE=$(cat "$REV_STATE" 2>/dev/null || echo "unknown")
+
+      # Fetch the latest remote rev to check if there's anything new
+      REV_REMOTE=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
         | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null || echo "unknown")
+
+      if [ "$REV_BEFORE" = "$REV_REMOTE" ] && [ "$REV_REMOTE" != "unknown" ]; then
+        echo "[auto-update] Already on latest commit ($REV_REMOTE) — skipping"
+        exit 0
+      fi
+
+      echo "[auto-update] New commit detected ($REV_BEFORE -> $REV_REMOTE), applying..."
 
       # Capture exit code without triggering set -e.
       # Code 0: success. Code 4: activation warnings (partial success, generation
@@ -69,8 +80,6 @@ in
       REBUILD_EXIT=''${REBUILD_EXIT:-0}
 
       GEN_AFTER=$(readlink /run/current-system)
-      REV_AFTER=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
-        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null || echo "unknown")
 
       if [ "$REBUILD_EXIT" -ne 0 ] && [ "$GEN_BEFORE" = "$GEN_AFTER" ]; then
         ${errorDialog} "Update failed on $HOSTNAME (exit $REBUILD_EXIT).\n\nCheck logs with:\njournalctl -u nixos-auto-update" || true
@@ -80,21 +89,16 @@ in
 
       echo "[auto-update] Switch succeeded (exit $REBUILD_EXIT)"
 
-      # Record the applied commit to /persist — one line per unique git hash.
+      # Persist the applied rev and record in manifest
+      echo "$REV_REMOTE" > "$REV_STATE"
       MANIFEST=/persist/manifest.txt
-      if ! grep -qF "$REV_AFTER" "$MANIFEST" 2>/dev/null; then
-        ENTRY="$(date -u +"%Y-%m-%dT%H:%M:%SZ")  $HOSTNAME  $REV_AFTER"
-        echo "$ENTRY" >> "$MANIFEST" \
-          && echo "[auto-update] Manifest updated: $ENTRY" \
-          || echo "[auto-update] Warning: could not write $MANIFEST"
-      fi
+      ENTRY="$(date -u +"%Y-%m-%dT%H:%M:%SZ")  $HOSTNAME  $REV_REMOTE"
+      echo "$ENTRY" >> "$MANIFEST" \
+        && echo "[auto-update] Manifest updated: $ENTRY" \
+        || echo "[auto-update] Warning: could not write $MANIFEST"
 
-      if [ "$GEN_BEFORE" != "$GEN_AFTER" ] || [ "$REV_BEFORE" != "$REV_AFTER" ]; then
-        echo "[auto-update] Change detected (gen: $GEN_BEFORE -> $GEN_AFTER, rev: $REV_BEFORE -> $REV_AFTER) — rebooting"
-        /run/current-system/sw/bin/systemctl reboot
-      else
-        echo "[auto-update] Already on latest commit and generation — no reboot needed"
-      fi
+      echo "[auto-update] Change applied (gen: $GEN_BEFORE -> $GEN_AFTER, rev: $REV_BEFORE -> $REV_REMOTE) — rebooting"
+      /run/current-system/sw/bin/systemctl reboot
     '';
   };
 
