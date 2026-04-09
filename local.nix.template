@@ -1,31 +1,20 @@
-# Copy this file to /etc/nixos/local.nix on each device.
-# Fill in the WiFi PSK. This file must NEVER be committed to git.
+# Copy this file to /persist/etc/nixos/local.nix on each device.
+# This file must NEVER be committed to git.
+#
+# WiFi networks are now managed fleet-wide via agenix (secrets/wifi-credentials.age)
+# and networking.networkmanager.ensureProfiles in modules/base.nix.
+# You no longer need to configure WiFi here.
+#
+# Use this file only for per-device overrides that cannot go in the shared
+# module, e.g. hardware-specific kernel modules or a custom hostname.
 { ... }:
 
 {
-  # Drops a NetworkManager connection keyfile for the fleet WiFi network.
-  environment.etc."NetworkManager/system-connections/CGROUNDWIFI.nmconnection" = {
-    mode = "0600";
-    text = ''
-      [connection]
-      id=CGROUNDWIFI
-      type=wifi
+  # Example: override the hostname set by the host config
+  # networking.hostName = "optiplex1";
 
-      [wifi]
-      ssid=CGROUNDWIFI
-      mode=infrastructure
-
-      [wifi-security]
-      key-mgmt=wpa-psk
-      psk=REPLACE_WITH_ACTUAL_PASSWORD
-
-      [ipv4]
-      method=auto
-
-      [ipv6]
-      method=auto
-    '';
-  };
+  # Example: hardware-specific kernel modules
+  # boot.initrd.kernelModules = [ "i915" ];
 
   # Admin user password hash — generate with: mkpasswd -m sha-512
   # users.users.admin.initialHashedPassword = "$6$...";
