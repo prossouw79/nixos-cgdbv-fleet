@@ -42,6 +42,7 @@
       "/etc/ssh/ssh_host_rsa_key"
       "/etc/ssh/ssh_host_rsa_key.pub"
       "/etc/nixos/local.nix"
+      { file = "/home/admin/.bash_history"; parentDirectory = { user = "admin"; group = "admin"; mode = "0700"; }; }
     ];
   };
 }
