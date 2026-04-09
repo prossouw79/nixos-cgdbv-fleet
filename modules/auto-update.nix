@@ -61,7 +61,7 @@ in
       REV_BEFORE=$(cat "$REV_STATE" 2>/dev/null || echo "unknown")
 
       # Fetch the latest remote rev to check if there's anything new
-      REV_REMOTE=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
+      REV_REMOTE=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json --refresh 2>/dev/null \
         | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null || echo "unknown")
 
       if [ "$REV_BEFORE" = "$REV_REMOTE" ] && [ "$REV_REMOTE" != "unknown" ]; then
