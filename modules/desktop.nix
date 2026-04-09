@@ -48,7 +48,6 @@
     };
     locks = [
       "/org/gnome/desktop/session/idle-delay"
-      "/org/gnome/desktop/screensaver/lock-enabled"
       "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type"
       "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type"
       "/org/gnome/settings-daemon/plugins/power/power-button-action"
