@@ -86,4 +86,27 @@ in
   # can enrol without rotating the secret.
   services.tailscale.authKeyFile = lib.mkIf hasTailscaleSecret
     config.age.secrets.tailscale-authkey.path;
+
+  # One-shot: consume the install-time auth key written by install.sh, if present.
+  # This runs after tailscale is up, authenticates, then removes the key file so
+  # it is only used once. Skipped silently if the file does not exist.
+  systemd.services.tailscale-install-auth = {
+    description = "Tailscale install-time authentication";
+    after       = [ "tailscaled.service" "network-online.target" ];
+    wants       = [ "network-online.target" ];
+    wantedBy    = [ "multi-user.target" ];
+    serviceConfig = {
+      Type      = "oneshot";
+      RemainAfterExit = false;
+    };
+    script = ''
+      KEY_FILE=/persist/etc/tailscale-authkey
+      if [ ! -f "$KEY_FILE" ]; then
+        exit 0
+      fi
+      KEY=$(cat "$KEY_FILE")
+      rm -f "$KEY_FILE"
+      ${pkgs.tailscale}/bin/tailscale up --authkey="$KEY"
+    '';
+  };
 }

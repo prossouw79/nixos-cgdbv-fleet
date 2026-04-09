@@ -59,6 +59,15 @@ case "$HOST_NUM" in
   *) error "Invalid selection" ;;
 esac
 
+# ── Optional Tailscale pre-auth ───────────────────────────────────────────────
+echo ""
+read -rp "Tailscale auth key (leave blank to skip): " TS_AUTHKEY </dev/tty
+if [[ -n "$TS_AUTHKEY" ]]; then
+  info "Tailscale auth key will be applied on first boot."
+else
+  warn "No Tailscale auth key provided — device will need manual tailscale up after install."
+fi
+
 info "Installing $HOSTNAME onto $DEVICE"
 
 # ── Wipe existing mounts and partitions ───────────────────────────────────────
@@ -126,6 +135,13 @@ warn "New SSH host key (update secrets/secrets.nix with this after install):"
 echo ""
 cat /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
 echo ""
+
+# ── Tailscale install-time auth key ──────────────────────────────────────────
+if [[ -n "$TS_AUTHKEY" ]]; then
+  echo "$TS_AUTHKEY" > /mnt/persist/etc/tailscale-authkey
+  chmod 600 /mnt/persist/etc/tailscale-authkey
+  info "Tailscale auth key written to /persist/etc/tailscale-authkey"
+fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."
