@@ -8,11 +8,12 @@
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
   environment.gnome.excludePackages = with pkgs; [
     baobab          # disk usage analyser
-    cheese
+    cheese          # camera
     eog             # image viewer
     epiphany
     evince          # document viewer
-    file-roller     # file roller / archive manager
+    file-roller
+    geary           # mail client
     gnome-calculator
     gnome-calendar
     gnome-characters
@@ -22,12 +23,13 @@
     gnome-font-viewer
     gnome-logs
     gnome-maps
-    gnome-music
+    gnome-music     # audio player
     gnome-text-editor
+    gnome-tour
     gnome-weather
     seahorse        # passwords and keys
     simple-scan
-    totem
+    totem           # video player
   ];
 
   # Disable screen blanking, screensaver lock, and idle power actions.
