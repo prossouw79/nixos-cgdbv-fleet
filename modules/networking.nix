@@ -88,13 +88,12 @@ in
   services.tailscale.authKeyFile = lib.mkIf hasTailscaleSecret
     config.age.secrets.tailscale-authkey.path;
 
-  # One-shot: consume the install-time auth key written by install.sh, if present.
-  # This runs after tailscale is up, authenticates, then removes the key file so
-  # it is only used once. Skipped silently if the file does not exist.
-  # One-shot: consume WiFi credentials written by install.sh, if present.
-  # Adds networks via nmcli then removes the file so it is only used once.
+  # Runs on every boot: registers the WiFi profile from /persist/etc/wifi-credentials
+  # into NetworkManager if not already present. Uses 'connection add' so the network
+  # does not need to be in range — NM will connect automatically when it is visible.
+  # The credentials file is never deleted, allowing use across different locations.
   systemd.services.wifi-install-credentials = {
-    description = "WiFi install-time credential import";
+    description = "WiFi credential profile registration";
     after       = [ "NetworkManager.service" ];
     wantedBy    = [ "multi-user.target" ];
     serviceConfig = {
@@ -107,28 +106,48 @@ in
         exit 0
       fi
       . "$CRED_FILE"
-      if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PSK" ]; then
-        ${pkgs.networkmanager}/bin/nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PSK" || true
+      if [ -z "$WIFI_SSID" ] || [ -z "$WIFI_PSK" ]; then
+        exit 0
       fi
+      # Skip if a connection profile for this SSID already exists
+      if ${pkgs.networkmanager}/bin/nmcli -g NAME connection show | grep -qxF "$WIFI_SSID"; then
+        exit 0
+      fi
+      ${pkgs.networkmanager}/bin/nmcli connection add \
+        type wifi \
+        con-name "$WIFI_SSID" \
+        ssid "$WIFI_SSID" \
+        wifi-sec.key-mgmt wpa-psk \
+        wifi-sec.psk "$WIFI_PSK" \
+        connection.autoconnect yes
     '';
   };
 
+  # Runs on every boot: authenticates with Tailscale using the key in
+  # /persist/etc/tailscale-authkey, if present. Skipped once the node is
+  # already enrolled. Retries on failure so it recovers if the network
+  # isn't available yet at boot time (e.g. waiting for WiFi to connect).
   systemd.services.tailscale-install-auth = {
     description = "Tailscale install-time authentication";
     after       = [ "tailscaled.service" "network-online.target" ];
     wants       = [ "network-online.target" ];
     wantedBy    = [ "multi-user.target" ];
     serviceConfig = {
-      Type      = "oneshot";
+      Type       = "oneshot";
       RemainAfterExit = false;
+      Restart    = "on-failure";
+      RestartSec = "10s";
     };
     script = ''
       KEY_FILE=/persist/etc/tailscale-authkey
       if [ ! -f "$KEY_FILE" ]; then
         exit 0
       fi
+      # Already enrolled — nothing to do
+      if ${pkgs.tailscale}/bin/tailscale status --json 2>/dev/null | grep -q '"BackendState":"Running"'; then
+        exit 0
+      fi
       KEY=$(cat "$KEY_FILE")
-      rm -f "$KEY_FILE"
       ${pkgs.tailscale}/bin/tailscale up --authkey="$KEY" ${lib.concatStringsSep " " config.services.tailscale.extraUpFlags}
     '';
   };
