@@ -117,8 +117,15 @@ parted -s "$DEVICE" -- mkpart primary btrfs 512MiB 100%
 partprobe "$DEVICE"
 sleep 2
 
-PART1="${DEVICE}1"
-PART2="${DEVICE}2"
+# NVMe devices use a 'p' separator before the partition number (e.g. nvme0n1p1)
+# whereas traditional block devices do not (e.g. sda1).
+if [[ "$DEVICE" =~ nvme|mmcblk ]]; then
+  PART1="${DEVICE}p1"
+  PART2="${DEVICE}p2"
+else
+  PART1="${DEVICE}1"
+  PART2="${DEVICE}2"
+fi
 
 # ── Format ────────────────────────────────────────────────────────────────────
 info "Formatting partitions..."
