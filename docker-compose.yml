@@ -11,5 +11,19 @@ services:
     # Default command — overridden by make targets
     command: nix flake check --no-build
 
+  # Local binary cache — serves the shared nix-store volume over HTTP on port 5000.
+  # No signing key required; set require-sigs = false on consuming machines.
+  # Start with: docker compose up -d nix-serve
+  nix-serve:
+    image: nixpkgs/nix:latest
+    volumes:
+      - nix-store:/nix
+    ports:
+      - "5000:5000"
+    environment:
+      NIX_CONFIG: "experimental-features = nix-command flakes"
+    command: >
+      nix run nixpkgs#nix-serve -- --host 0.0.0.0 --port 5000
+
 volumes:
   nix-store:

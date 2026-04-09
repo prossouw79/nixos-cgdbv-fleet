@@ -3,7 +3,7 @@ COMPOSE   := docker compose run --rm nix
 GIT_SAFE  := git config --global --add safe.directory /repo
 HOST      ?= optiplex1
 
-.PHONY: check build eval hosts iso shell clean lock
+.PHONY: check build eval hosts iso shell clean lock cache
 
 ## Fast: evaluate all configs — catches syntax and type errors without building
 ## --impure is required because host configs import /etc/nixos/local.nix
@@ -47,6 +47,27 @@ shell:
 ## Update flake.lock — run this after adding new inputs to flake.nix
 lock:
 	$(COMPOSE) sh -c '$(GIT_SAFE) && nix flake lock'
+
+## Build all host closures into the shared nix-store volume, then start the cache server.
+## The server stays running in the background on port 5000.
+## Usage: make cache   (builds all hosts)
+##        make cache HOST=testvm  (single host)
+cache:
+	git add -A
+	@if [ "$(HOST)" != "optiplex1" ]; then \
+		$(COMPOSE) sh -c '$(GIT_SAFE) && nix build \
+			.#nixosConfigurations.$(HOST).config.system.build.toplevel \
+			--option sandbox false'; \
+	else \
+		for h in optiplex1 optiplex2 intelnuc testvm; do \
+			echo "==> Building $$h"; \
+			$(COMPOSE) sh -c '$(GIT_SAFE) && nix build \
+				.#nixosConfigurations.'$$h'.config.system.build.toplevel \
+				--option sandbox false'; \
+		done; \
+	fi
+	docker compose up -d nix-serve
+	@echo "Cache server running on http://localhost:5000"
 
 ## Remove the cached nix store volume (frees disk space)
 clean:

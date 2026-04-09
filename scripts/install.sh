@@ -59,6 +59,16 @@ case "$HOST_NUM" in
   *) error "Invalid selection" ;;
 esac
 
+# ── Optional local Nix cache ─────────────────────────────────────────────────
+echo ""
+read -rp "Local Nix cache IP/host (leave blank to skip): " CACHE_HOST </dev/tty
+if [[ -n "$CACHE_HOST" ]]; then
+  EXTRA_NIX_OPTS="--option substituters 'http://${CACHE_HOST}:5000 https://cache.nixos.org' --option require-sigs false"
+  info "Using local cache at http://${CACHE_HOST}:5000"
+else
+  EXTRA_NIX_OPTS=""
+fi
+
 # ── Optional Tailscale pre-auth ───────────────────────────────────────────────
 echo ""
 read -rp "Tailscale auth key (leave blank to skip): " TS_AUTHKEY </dev/tty
@@ -145,7 +155,7 @@ fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."
-nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd
+nixos-install --flake "${FLAKE_URL}#${HOSTNAME}" --no-root-passwd $EXTRA_NIX_OPTS
 
 echo ""
 info "Install complete."
