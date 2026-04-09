@@ -4,7 +4,6 @@ let
     name        = "trayscale-autostart";
     desktopName = "Trayscale";
     exec        = "${pkgs.trayscale}/bin/trayscale --hide-window";
-    autoStart   = true;
   };
 in
 {
