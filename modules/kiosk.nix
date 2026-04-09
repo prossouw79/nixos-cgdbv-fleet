@@ -42,15 +42,15 @@ in
   systemd.targets.hybrid-sleep.enable = false;
 
   # Systemd hardware watchdog — reboots the machine if the kernel hangs
-  systemd.watchdog.runtimeTime = "30s";
+  systemd.settings.Manager.RuntimeWatchdogSec = "30s";
 
   # Ignore lid close and define power button behaviour
-  services.logind.extraConfig = ''
-    HandlePowerKey=poweroff
-    HandleLidSwitch=ignore
-    HandleLidSwitchExternalPower=ignore
-    HandleLidSwitchDocked=ignore
-  '';
+  services.logind.settings.Login = {
+    HandlePowerKey              = "poweroff";
+    HandleLidSwitch             = "ignore";
+    HandleLidSwitchExternalPower = "ignore";
+    HandleLidSwitchDocked       = "ignore";
+  };
 
   # ── Chrome kiosk browser ──────────────────────────────────────
   # Chrome runs as a systemd user service so it restarts automatically on crash.

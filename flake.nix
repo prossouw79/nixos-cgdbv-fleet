@@ -2,7 +2,7 @@
   description = "NixOS fleet configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     # Pin to a stable channel. Update with: nix flake update && git add flake.lock && git commit -m "bump nixpkgs"
 
     agenix = {
@@ -18,9 +18,9 @@
 
       # Add one entry per device. The name must match the device's hostname.
       optiplex1 = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          { nixpkgs.hostPlatform = "x86_64-linux"; }
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
           ./modules
@@ -29,9 +29,9 @@
       };
 
       optiplex2 = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          { nixpkgs.hostPlatform = "x86_64-linux"; }
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
           ./modules
@@ -40,9 +40,9 @@
       };
 
       testvm = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          { nixpkgs.hostPlatform = "x86_64-linux"; }
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
           ./modules
@@ -51,9 +51,9 @@
       };
 
       intelnuc = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          { nixpkgs.hostPlatform = "x86_64-linux"; }
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
           ./modules
@@ -65,8 +65,8 @@
       #   dd if=result/iso/*.iso of=/dev/sdX bs=4M status=progress
       # Boots to a shell; run: nixos-install --flake /iso/flake#generic
       iso = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
         modules = [
+          { nixpkgs.hostPlatform = "x86_64-linux"; }
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
           {
             # Pre-load the fleet admin SSH key so you can log in remotely during install

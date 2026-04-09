@@ -2,9 +2,9 @@
 {
   # ── GNOME ─────────────────────────────────────────────────────
   services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.displayManager.gdm.autoSuspend = false;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.displayManager.gdm.autoSuspend = false;
+  services.desktopManager.gnome.enable = true;
 
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
   environment.gnome.excludePackages = with pkgs; [
@@ -74,7 +74,7 @@
   security.pam.services.gdm-autologin.enableGnomeKeyring = true;
 
   # ── Audio ─────────────────────────────────────────────────────
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
