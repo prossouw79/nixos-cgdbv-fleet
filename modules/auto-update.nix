@@ -7,8 +7,8 @@ let
     TITLE="$2"
     BODY="$3"
     USER="admin"
-    UID=$(id -u "$USER")
-    DBUS="unix:path=/run/user/$UID/bus"
+    USER_UID=$(id -u "$USER")
+    DBUS="unix:path=/run/user/$USER_UID/bus"
     DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="$DBUS" \
       ${pkgs.libnotify}/bin/notify-send \
         --urgency="$URGENCY" \
@@ -20,8 +20,8 @@ let
   # Show a blocking error dialog in the kiosk user's session.
   errorDialog = pkgs.writeShellScript "error-dialog-kiosk-user" ''
     USER="admin"
-    UID=$(id -u "$USER")
-    DBUS="unix:path=/run/user/$UID/bus"
+    USER_UID=$(id -u "$USER")
+    DBUS="unix:path=/run/user/$USER_UID/bus"
     DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="$DBUS" \
       ${pkgs.zenity}/bin/zenity \
         --error \
@@ -54,12 +54,12 @@ in
       HOSTNAME=$(${pkgs.inetutils}/bin/hostname)
 
       echo "[auto-update] Applying config for host: $HOSTNAME"
-      ${notifyUser} low "System Update" "Applying configuration update..."
+      ${notifyUser} low "System Update" "Applying configuration update..." || true
 
       if ! /run/current-system/sw/bin/nixos-rebuild switch \
           --flake "$REPO#$HOSTNAME" \
           2>&1; then
-        ${errorDialog} "Update failed on $HOSTNAME.\n\nCheck logs with:\njournalctl -u nixos-auto-update"
+        ${errorDialog} "Update failed on $HOSTNAME.\n\nCheck logs with:\njournalctl -u nixos-auto-update" || true
         echo "[auto-update] Switch failed"
         exit 1
       fi
@@ -76,24 +76,19 @@ in
         && echo "[auto-update] Manifest updated: $ENTRY" \
         || echo "[auto-update] Warning: could not write /persist/manifest.txt"
 
-      # Reboot if the running system differs from the newly built one
-      # (e.g. a new kernel was installed)
-      booted=$(readlink /run/booted-system)
-      current=$(readlink /run/current-system)
-      if [ "$booted" != "$current" ]; then
-        echo "[auto-update] New generation requires reboot — rebooting now"
-        /run/current-system/sw/bin/systemctl reboot
-      fi
+      # TODO: reboot only on kernel changes once stable. For now reboot always.
+      echo "[auto-update] Rebooting after successful update"
+      /run/current-system/sw/bin/systemctl reboot
     '';
   };
 
-  # Run the update every 5 minutes (increase OnUnitActiveSec to "30min" once stable)
+  # TODO: increase OnUnitActiveSec to "5min" or "30min" once stable
   systemd.timers.nixos-auto-update = {
     description = "Periodic NixOS auto-update timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec          = "1min";
-      OnUnitActiveSec    = "5min";
+      OnUnitActiveSec    = "1min";
       RandomizedDelaySec = "10sec";
     };
   };
