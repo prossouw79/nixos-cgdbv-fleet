@@ -71,22 +71,27 @@ in
 
       echo "[auto-update] New commit detected ($REV_BEFORE -> $REV_REMOTE), applying..."
 
+      LOG=/persist/nixos-update-''${REV_REMOTE}.log
+      echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") host=$HOSTNAME rev=$REV_REMOTE" > "$LOG"
+
       # Capture exit code without triggering set -e.
       # Code 0: success. Code 4: activation warnings (partial success, generation
       # may still have been built). Anything else is a real failure.
       /run/current-system/sw/bin/nixos-rebuild switch \
         --flake "$REPO#$HOSTNAME" \
-        2>&1 || REBUILD_EXIT=$?
+        2>&1 | tee -a "$LOG" || REBUILD_EXIT=$?
       REBUILD_EXIT=''${REBUILD_EXIT:-0}
 
       GEN_AFTER=$(readlink /run/current-system)
 
       if [ "$REBUILD_EXIT" -ne 0 ] && [ "$GEN_BEFORE" = "$GEN_AFTER" ]; then
-        ${errorDialog} "Update failed on $HOSTNAME (exit $REBUILD_EXIT).\n\nCheck logs with:\njournalctl -u nixos-auto-update" || true
+        echo "RESULT=failed exit=$REBUILD_EXIT" >> "$LOG"
+        ${errorDialog} "Update failed on $HOSTNAME (exit $REBUILD_EXIT).\n\nSee /persist/nixos-update-''${REV_REMOTE}.log" || true
         echo "[auto-update] Switch failed (exit $REBUILD_EXIT, generation unchanged)"
         exit 1
       fi
 
+      echo "RESULT=success exit=$REBUILD_EXIT" >> "$LOG"
       echo "[auto-update] Switch succeeded (exit $REBUILD_EXIT)"
 
       # Persist the applied rev and record in manifest
