@@ -80,15 +80,14 @@ in
 
       echo "[auto-update] Switch succeeded (exit $REBUILD_EXIT)"
 
-      # Record the applied commit to /persist so it survives reboots.
-      # Non-fatal — a metadata fetch failure must not abort the update.
-      COMMIT=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
-        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null \
-        || echo "unknown")
-      ENTRY="$(date -u +"%Y-%m-%dT%H:%M:%SZ")  $HOSTNAME  $COMMIT"
-      echo "$ENTRY" >> /persist/manifest.txt \
-        && echo "[auto-update] Manifest updated: $ENTRY" \
-        || echo "[auto-update] Warning: could not write /persist/manifest.txt"
+      # Record the applied commit to /persist — one line per unique git hash.
+      MANIFEST=/persist/manifest.txt
+      if ! grep -qF "$REV_AFTER" "$MANIFEST" 2>/dev/null; then
+        ENTRY="$(date -u +"%Y-%m-%dT%H:%M:%SZ")  $HOSTNAME  $REV_AFTER"
+        echo "$ENTRY" >> "$MANIFEST" \
+          && echo "[auto-update] Manifest updated: $ENTRY" \
+          || echo "[auto-update] Warning: could not write $MANIFEST"
+      fi
 
       if [ "$GEN_BEFORE" != "$GEN_AFTER" ] || [ "$REV_BEFORE" != "$REV_AFTER" ]; then
         echo "[auto-update] Change detected (gen: $GEN_BEFORE -> $GEN_AFTER, rev: $REV_BEFORE -> $REV_AFTER) — rebooting"
