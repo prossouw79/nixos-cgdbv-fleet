@@ -13,6 +13,10 @@
   # VirtIO drivers for Proxmox/QEMU VMs — harmless on physical hardware
   boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_blk" "virtio_scsi" ];
 
+  # postDeviceCommands requires the classic (non-systemd) stage-1 initrd.
+  # 25.11 defaults to systemd initrd — disable it explicitly to keep the rollback working.
+  boot.initrd.systemd.enable = false;
+
   # Roll back @ to the blank snapshot on every boot
   boot.initrd.supportedFilesystems = [ "btrfs" ];
   boot.initrd.postDeviceCommands = lib.mkAfter ''
