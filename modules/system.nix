@@ -8,6 +8,7 @@
     vlc
     vscode
     gnomeExtensions.no-overview
+    rustdesk
 
     # ── Dev tools ─────────────────────────────────────────────────
     git
