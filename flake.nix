@@ -39,16 +39,14 @@
         ];
       };
 
-      # Generic host — base layer only, no machine-specific config.
-      # Used as the install target on the offline ISO.
-      generic = nixpkgs.lib.nixosSystem {
+      testvm = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
           ./modules/base.nix
-          ./hosts/generic/configuration.nix
+          ./hosts/testvm/configuration.nix
         ];
       };
 
