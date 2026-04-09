@@ -73,6 +73,7 @@ in
     "--ssh"            # enable Tailscale SSH over the tailnet (coexists with sshd)
     "--accept-routes"  # honour subnet routes advertised by other tailnet nodes
     "--accept-dns"     # use Tailscale MagicDNS / custom nameservers
+    "--reset"          # clear any previously set flags not listed here (keeps config declarative)
   ];
 
   age.secrets.tailscale-authkey = lib.mkIf hasTailscaleSecret {
@@ -106,7 +107,7 @@ in
       fi
       KEY=$(cat "$KEY_FILE")
       rm -f "$KEY_FILE"
-      ${pkgs.tailscale}/bin/tailscale up --authkey="$KEY"
+      ${pkgs.tailscale}/bin/tailscale up --authkey="$KEY" ${lib.concatStringsSep " " config.services.tailscale.extraUpFlags}
     '';
   };
 }
