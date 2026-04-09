@@ -40,10 +40,10 @@
     # ── Network tools ─────────────────────────────────────────────
     inetutils     # hostname, ping, ifconfig, traceroute
     nettools      # netstat, route, arp
-    nmap
-    bmon
-    nethogs
-    dig
+    #nmap
+    #bmon
+    #nethogs
+    #dig
 
     # ── Hardware inspection ───────────────────────────────────────
     pciutils      # lspci
