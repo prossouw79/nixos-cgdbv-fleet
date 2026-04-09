@@ -6,12 +6,12 @@
     # ── Desktop / user apps ───────────────────────────────────────
     google-chrome
     vlc
-    vscode
+    #vscode
     gnomeExtensions.no-overview
 
     # ── Dev tools ─────────────────────────────────────────────────
     git
-    (python3.withPackages (ps: [ ps.pip ]))  # venv is included in stdlib
+    #(python3.withPackages (ps: [ ps.pip ]))  # venv is included in stdlib
 
     # ── Container tools ───────────────────────────────────────────
     docker
@@ -19,15 +19,15 @@
 
     # ── System utilities ──────────────────────────────────────────
     curl
-    wget
-    rsync
-    file
-    tree
-    unzip
-    zip
-    jq
-    tmux
-    vim
+    #wget
+    #rsync
+    #file
+    #tree
+    #unzip
+    #zip
+    #jq
+    #tmux
+    #vim
     nano
     ethtool   # used by WoL udev rule
 
@@ -59,5 +59,5 @@
 
   services.glances.enable = true;
 
-  system.stateVersion = "24.11";
+  system.stateVersion = "24.11"; # don't change this after initial setup — see https://nixos.org/manual/nixos/stable/#sec-upgrading
 }
