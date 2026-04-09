@@ -69,7 +69,6 @@ in
       # Chrome's namespace sandbox cannot initialise (causes SIGTRAP otherwise).
       # --disable-dev-shm-usage: avoids /dev/shm exhaustion on low-memory machines.
       ExecStartPre = "${pkgs.coreutils}/bin/sleep 5"; # let GNOME settle first
-      ExecStartPost = "${pkgs.xdotool}/bin/xdotool mousemove 99999 99999";
       ExecStart = ''
         ${pkgs.google-chrome}/bin/google-chrome-stable \
           --no-sandbox \
