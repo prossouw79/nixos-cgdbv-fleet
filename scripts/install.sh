@@ -49,7 +49,7 @@ echo "  1) optiplex1"
 echo "  2) optiplex2"
 echo "  3) intelnuc"
 echo ""
-read -rp "Select host [1/2]: " HOST_NUM </dev/tty
+read -rp "Select host [1-3]: " HOST_NUM </dev/tty
 case "$HOST_NUM" in
   1) HOSTNAME="optiplex1" ;;
   2) HOSTNAME="optiplex2" ;;
@@ -124,16 +124,6 @@ warn "New SSH host key (update secrets/secrets.nix with this after install):"
 echo ""
 cat /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
 echo ""
-
-read -rp "Do you have a local.nix to copy in now? [y/N]: " HAS_LOCAL </dev/tty
-if [[ "${HAS_LOCAL,,}" == "y" ]]; then
-  read -rp "Path to local.nix: " LOCAL_NIX_PATH </dev/tty
-  [[ -f "$LOCAL_NIX_PATH" ]] || error "File not found: $LOCAL_NIX_PATH"
-  cp "$LOCAL_NIX_PATH" /mnt/persist/etc/nixos/local.nix
-  info "Copied local.nix"
-else
-  warn "Skipping local.nix — copy it to /persist/etc/nixos/local.nix after first boot"
-fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 info "Running nixos-install from ${FLAKE_URL}#${HOSTNAME} ..."

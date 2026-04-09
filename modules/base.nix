@@ -162,28 +162,27 @@ in
 
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
   environment.gnome.excludePackages = with pkgs; [
-    gnome-maps 
-    gnome-music 
-    gnome-weather 
-    gnome-contacts
-    gnome-calendar 
-    totem
-    cheese
-    epiphany
-    gnome-clocks
-    gnome-calculator
-    #gnome-extensions-app
-    simple-scan 
-    gnome-text-editor
-    xterm
     baobab          # disk usage analyser
+    cheese
+    eog             # image viewer
+    epiphany
     evince          # document viewer
     file-roller     # file roller / archive manager
-    gnome-font-viewer
-    eog             # image viewer
-    seahorse        # passwords and keys
+    gnome-calculator
+    gnome-calendar 
     gnome-characters
+    gnome-clocks
+    gnome-contacts
+    #gnome-extensions-app
+    gnome-font-viewer
     gnome-logs
+    gnome-maps 
+    gnome-music 
+    gnome-text-editor
+    gnome-weather 
+    seahorse        # passwords and keys
+    simple-scan 
+    totem
   ];
 
   # Disable screen blanking, screensaver lock, and idle power actions.
@@ -327,7 +326,7 @@ in
 
   # Start transcribe via docker-compose on boot (after Docker is ready)
   systemd.services.transcribe-docker = {
-    description = "Nginx Docker Compose (port 8885)";
+    description = "Docker Compose (port 8885)";
     after    = [ "docker.service" "docker-login.service" "network-online.target" ];
     requires = [ "docker.service" "docker-login.service" ];
     wants    = [ "network-online.target" ];
