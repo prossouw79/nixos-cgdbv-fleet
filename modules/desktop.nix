@@ -48,8 +48,16 @@
       "org/gnome/shell".enabled-extensions = [ "no-overview@fthx" "appindicatorsupport@rgcjonas.gmail.com" ];
       "org/gnome/shell".welcome-dialog-last-shown-version = "9999";
 
-      # Appearance — dark mode
+      # Appearance — dark mode and black wallpaper
       "org/gnome/desktop/interface".color-scheme = "prefer-dark";
+      "org/gnome/desktop/background" = {
+        primary-color      = "#000000";
+        secondary-color    = "#000000";
+        color-shading-type = "solid";
+        picture-options    = "none";
+        picture-uri        = "";
+        picture-uri-dark   = "";
+      };
 
       # Notifications — do not disturb + disable calendar/events reminders
       "org/gnome/desktop/notifications".show-banners                             = false;
