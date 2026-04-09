@@ -56,6 +56,8 @@ in
       echo "[auto-update] Applying config for host: $HOSTNAME"
       ${notifyUser} low "System Update" "Applying configuration update..." || true
 
+      GEN_BEFORE=$(readlink /run/current-system)
+
       if ! /run/current-system/sw/bin/nixos-rebuild switch \
           --flake "$REPO#$HOSTNAME" \
           2>&1; then
@@ -64,6 +66,7 @@ in
         exit 1
       fi
 
+      GEN_AFTER=$(readlink /run/current-system)
       echo "[auto-update] Switch succeeded"
 
       # Record the applied commit to /persist so it survives reboots.
@@ -76,9 +79,12 @@ in
         && echo "[auto-update] Manifest updated: $ENTRY" \
         || echo "[auto-update] Warning: could not write /persist/manifest.txt"
 
-      # TODO: reboot only on kernel changes once stable. For now reboot always.
-      echo "[auto-update] Rebooting after successful update"
-      /run/current-system/sw/bin/systemctl reboot
+      if [ "$GEN_BEFORE" != "$GEN_AFTER" ]; then
+        echo "[auto-update] New generation applied — rebooting"
+        /run/current-system/sw/bin/systemctl reboot
+      else
+        echo "[auto-update] Already on latest generation — no reboot needed"
+      fi
     '';
   };
 
