@@ -1,4 +1,30 @@
 { pkgs, ... }:
+let
+  waitingPage = pkgs.writeText "kiosk-waiting.html" ''
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Loading...</title>
+      <style>
+        body { background: #000; color: #fff; font-family: sans-serif;
+               display: flex; align-items: center; justify-content: center;
+               height: 100vh; margin: 0; }
+      </style>
+    </head>
+    <body>
+      <p>Waiting for application...</p>
+      <script>
+        function check() {
+          fetch('http://localhost:8885', { mode: 'no-cors' })
+            .then(function() { window.location.replace('http://localhost:8885'); })
+            .catch(function() { setTimeout(check, 2000); });
+        }
+        check();
+      </script>
+    </body>
+    </html>
+  '';
+in
 {
   # ── Auto-login ────────────────────────────────────────────────
   services.displayManager.autoLogin = {
@@ -56,7 +82,7 @@
           --disable-default-browser-check \
           --no-default-browser-check \
           --metrics-recording-only \
-          http://localhost:8885
+          file://${waitingPage}
       '';
       Restart    = "on-failure";
       RestartSec = "5s";

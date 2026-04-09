@@ -61,7 +61,6 @@ in
       RemainAfterExit  = true;
       WorkingDirectory = "/opt/docker-compose/transcribe";
       ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d --pull always";
-      ExecStop  = "${pkgs.docker-compose}/bin/docker-compose down";
     };
   };
 }
