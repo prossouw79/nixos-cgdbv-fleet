@@ -91,6 +91,29 @@ in
   # One-shot: consume the install-time auth key written by install.sh, if present.
   # This runs after tailscale is up, authenticates, then removes the key file so
   # it is only used once. Skipped silently if the file does not exist.
+  # One-shot: consume WiFi credentials written by install.sh, if present.
+  # Adds networks via nmcli then removes the file so it is only used once.
+  systemd.services.wifi-install-credentials = {
+    description = "WiFi install-time credential import";
+    after       = [ "NetworkManager.service" ];
+    wantedBy    = [ "multi-user.target" ];
+    serviceConfig = {
+      Type      = "oneshot";
+      RemainAfterExit = false;
+    };
+    script = ''
+      CRED_FILE=/persist/etc/wifi-credentials
+      if [ ! -f "$CRED_FILE" ]; then
+        exit 0
+      fi
+      . "$CRED_FILE"
+      rm -f "$CRED_FILE"
+      if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PSK" ]; then
+        ${pkgs.networkmanager}/bin/nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PSK" || true
+      fi
+    '';
+  };
+
   systemd.services.tailscale-install-auth = {
     description = "Tailscale install-time authentication";
     after       = [ "tailscaled.service" "network-online.target" ];

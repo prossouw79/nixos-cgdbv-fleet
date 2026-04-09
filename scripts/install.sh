@@ -69,6 +69,21 @@ else
   EXTRA_NIX_OPTS=()
 fi
 
+# ── Optional WiFi credentials ────────────────────────────────────────────────
+echo ""
+read -rp "WiFi SSID (leave blank to skip): " WIFI_SSID </dev/tty
+if [[ -n "$WIFI_SSID" ]]; then
+  while true; do
+    read -rsp "WiFi PSK: "        WIFI_PSK  </dev/tty; echo
+    read -rsp "WiFi PSK (again): " WIFI_PSK2 </dev/tty; echo
+    [[ "$WIFI_PSK" == "$WIFI_PSK2" ]] && break
+    warn "Passwords do not match, try again."
+  done
+  info "WiFi credentials will be applied on first boot."
+else
+  warn "No WiFi credentials provided — configure manually after install."
+fi
+
 # ── Optional Tailscale pre-auth ───────────────────────────────────────────────
 echo ""
 read -rp "Tailscale auth key (leave blank to skip): " TS_AUTHKEY </dev/tty
@@ -145,6 +160,13 @@ warn "New SSH host key (update secrets/secrets.nix with this after install):"
 echo ""
 cat /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
 echo ""
+
+# ── WiFi install-time credentials ────────────────────────────────────────────
+if [[ -n "$WIFI_SSID" ]]; then
+  printf 'WIFI_SSID=%s\nWIFI_PSK=%s\n' "$WIFI_SSID" "$WIFI_PSK" > /mnt/persist/etc/wifi-credentials
+  chmod 600 /mnt/persist/etc/wifi-credentials
+  info "WiFi credentials written to /persist/etc/wifi-credentials"
+fi
 
 # ── Tailscale install-time auth key ──────────────────────────────────────────
 if [[ -n "$TS_AUTHKEY" ]]; then
