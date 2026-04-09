@@ -45,6 +45,16 @@
       };
       "org/gnome/shell".enabled-extensions = [ "no-overview@fthx" "appindicatorsupport@rgcjonas.gmail.com" ];
       "org/gnome/shell".welcome-dialog-last-shown-version = "9999";
+
+      # Appearance — dark mode
+      "org/gnome/desktop/interface".color-scheme = "prefer-dark";
+
+      # Notifications — disable calendar/events reminders
+      "org/gnome/desktop/notifications/application/gnome-calendar".show-banners = false;
+      "org/gnome/desktop/notifications/application/gnome-clocks".show-banners   = false;
+
+      # Multitasking — disable hot corners
+      "org/gnome/desktop/interface".enable-hot-corners = false;
     };
     locks = [
       "/org/gnome/desktop/session/idle-delay"
@@ -75,6 +85,15 @@
     Exec=${pkgs.trayscale}/bin/trayscale --hide-window
     X-GNOME-Autostart-enabled=true
   '';
+
+  # ── Boot volume ──────────────────────────────────────────────
+  systemd.user.services.set-boot-volume = {
+    description = "Set default audio output to 80% on login";
+    wantedBy = [ "graphical-session.target" ];
+    after    = [ "graphical-session.target" ];
+    serviceConfig.Type = "oneshot";
+    script = "${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 80%";
+  };
 
   # ── GNOME Keyring ─────────────────────────────────────────────
   # Auto-unlock the keyring on login. gdm-autologin is the PAM service used
