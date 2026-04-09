@@ -107,7 +107,6 @@ in
         exit 0
       fi
       . "$CRED_FILE"
-      rm -f "$CRED_FILE"
       if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PSK" ]; then
         ${pkgs.networkmanager}/bin/nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PSK" || true
       fi
