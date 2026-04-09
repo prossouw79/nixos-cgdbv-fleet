@@ -2,8 +2,7 @@
 {
   # ── GNOME ─────────────────────────────────────────────────────
   services.xserver.enable = true;
-  services.displayManager.gdm.enable = true;
-  services.displayManager.gdm.autoSuspend = false;
+  services.xserver.displayManager.lightdm.enable = true;
   services.desktopManager.gnome.enable = true;
 
   # Trim GNOME to a minimal footprint (packages moved to top-level in 24.11)
@@ -83,7 +82,7 @@
   # when auto-login is enabled — hooking it here means gnome-keyring-daemon
   # receives the (empty) credentials at login and unlocks without prompting.
   services.gnome.gnome-keyring.enable = true;
-  security.pam.services.gdm-autologin.enableGnomeKeyring = true;
+  security.pam.services.lightdm-autologin.enableGnomeKeyring = true;
 
   # ── Audio ─────────────────────────────────────────────────────
   services.pulseaudio.enable = false;
