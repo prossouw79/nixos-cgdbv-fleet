@@ -57,6 +57,8 @@ in
       ${notifyUser} low "System Update" "Applying configuration update..." || true
 
       GEN_BEFORE=$(readlink /run/current-system)
+      REV_BEFORE=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
+        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null || echo "unknown")
 
       # Capture exit code without triggering set -e.
       # Code 0: success. Code 4: activation warnings (partial success, generation
@@ -67,6 +69,8 @@ in
       REBUILD_EXIT=''${REBUILD_EXIT:-0}
 
       GEN_AFTER=$(readlink /run/current-system)
+      REV_AFTER=$(${pkgs.nix}/bin/nix flake metadata "$REPO" --json 2>/dev/null \
+        | ${pkgs.jq}/bin/jq -r '.locked.rev // "unknown"' 2>/dev/null || echo "unknown")
 
       if [ "$REBUILD_EXIT" -ne 0 ] && [ "$GEN_BEFORE" = "$GEN_AFTER" ]; then
         ${errorDialog} "Update failed on $HOSTNAME (exit $REBUILD_EXIT).\n\nCheck logs with:\njournalctl -u nixos-auto-update" || true
@@ -86,11 +90,11 @@ in
         && echo "[auto-update] Manifest updated: $ENTRY" \
         || echo "[auto-update] Warning: could not write /persist/manifest.txt"
 
-      if [ "$GEN_BEFORE" != "$GEN_AFTER" ]; then
-        echo "[auto-update] New generation applied — rebooting"
+      if [ "$GEN_BEFORE" != "$GEN_AFTER" ] || [ "$REV_BEFORE" != "$REV_AFTER" ]; then
+        echo "[auto-update] Change detected (gen: $GEN_BEFORE -> $GEN_AFTER, rev: $REV_BEFORE -> $REV_AFTER) — rebooting"
         /run/current-system/sw/bin/systemctl reboot
       else
-        echo "[auto-update] Already on latest generation — no reboot needed"
+        echo "[auto-update] Already on latest commit and generation — no reboot needed"
       fi
     '';
   };
