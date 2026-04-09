@@ -65,7 +65,7 @@ in
   }];
 
   # ── Trayscale (Tailscale tray applet) ────────────────────────
-  environment.systemPackages = [ pkgs.trayscale gnomeExtensions.appindicator ];
+  environment.systemPackages = [ pkgs.trayscale pkgs.gnomeExtensions.appindicator ];
   xdg.autostart.entries = [ trayscaleAutostart ];
 
   # ── GNOME Keyring ─────────────────────────────────────────────
