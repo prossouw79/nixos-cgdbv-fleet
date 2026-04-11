@@ -50,10 +50,13 @@ in
   # Start transcribe via docker-compose on boot (after Docker is ready)
   systemd.services.transcribe-docker = {
     description = "Docker Compose (port 8885)";
-    after    = [ "docker.service" "network-online.target" ]
-               ++ lib.optional hasDockerSecret "docker-login.service";
-    requires = [ "docker.service" ]
-               ++ lib.optional hasDockerSecret "docker-login.service";
+    # if image requires auth, ensure docker-login runs first;
+    # after    = [ "docker.service" "network-online.target" ]
+    #            ++ lib.optional hasDockerSecret "docker-login.service";
+    # requires = [ "docker.service" ]
+    #            ++ lib.optional hasDockerSecret "docker-login.service";
+    after    = [ "docker.service" ];
+    requires = [ "docker.service" ];
     wants    = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
@@ -61,6 +64,7 @@ in
       RemainAfterExit  = true;
       WorkingDirectory = "/opt/docker-compose/transcribe";
       ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d --pull always";
+      ExecStop  = "${pkgs.docker-compose}/bin/docker-compose down";
     };
   };
 }
