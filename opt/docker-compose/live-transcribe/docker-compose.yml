@@ -4,10 +4,10 @@ volumes:
 
 services:
   live-transcribe:
-    # image: prossouw79/grtspwhspr:snapshot
-    image: nginx
+    image: prossouw79/grtspwhspr:snapshot
+    # image: nginx
     ports:
-      - "127.0.0.1:8885:80"
+      - "127.0.0.1:8885:8885"
     restart: always
     volumes:
       - ./config.yaml:/opt/live-transcribe/config.yaml
