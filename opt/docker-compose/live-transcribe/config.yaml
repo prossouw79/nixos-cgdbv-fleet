@@ -1,4 +1,4 @@
-rtsp_url: rtsp://100.94.100.86:8554/stream
+rtsp_url: rtsp://192.168.1.6:8554/stream
 whisper_model: models/ggml-base.en.bin
 whisper_language: en
 port: "8885"
