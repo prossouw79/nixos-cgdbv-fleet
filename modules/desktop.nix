@@ -66,6 +66,24 @@
 
       # Multitasking — disable hot corners
       "org/gnome/desktop/interface".enable-hot-corners = false;
+
+      # Keyboard shortcuts — Ubuntu-like
+      "org/gnome/settings-daemon/plugins/media-keys" = {
+        custom-keybindings = [
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+        ];
+      };
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+        name    = "Open Terminal";
+        command = "kgx";
+        binding = "<Control><Alt>t";
+      };
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
+        name    = "Open Files";
+        command = "nautilus";
+        binding = "<Super>e";
+      };
     };
     locks = [
       "/org/gnome/desktop/session/idle-delay"
