@@ -1,5 +1,5 @@
 rtsp_url: rtsp://192.168.1.6:8554/stream
-whisper_model: models/ggml-base.en.bin
+whisper_model: models/ggml-small.en.bin
 whisper_language: en
 port: "8885"
 audio_buffer_size: 5
